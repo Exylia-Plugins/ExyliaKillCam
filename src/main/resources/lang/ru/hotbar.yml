@@ -1,0 +1,25 @@
+# Кнопка на панели быстрого доступа во время киллкама.
+#
+# Drawn on the client, never put in the inventory: the viewer's own items stay
+# underneath and come back when the killcam ends. Slots 0-8 are the hotbar.
+
+lock: FULL
+pickup: false
+hide_rest: true
+
+items:
+
+  skip:
+    slot: 4
+    material: BARRIER
+    name: '{error}&lПРОПУСТИТЬ'
+    lore:
+      - ''
+      - '{secondary}Информация:'
+      - ' {letters_black}▎ {letters}Выйти из киллкама и вернуться'
+      - ' {letters_black}▎ {letters}туда, где вы были.'
+      - ''
+      - '{warning}➥ Нажмите, чтобы пропустить'
+      - ''
+    actions:
+      - 'exyliakillcam:skip'

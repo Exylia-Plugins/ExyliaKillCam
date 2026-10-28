@@ -1,0 +1,25 @@
+# Bir killcam izlerken hızlı çubuktaki düğme.
+#
+# Drawn on the client, never put in the inventory: the viewer's own items stay
+# underneath and come back when the killcam ends. Slots 0-8 are the hotbar.
+
+lock: FULL
+pickup: false
+hide_rest: true
+
+items:
+
+  skip:
+    slot: 4
+    material: BARRIER
+    name: '{error}&lGEÇ'
+    lore:
+      - ''
+      - '{secondary}Bilgi:'
+      - ' {letters_black}▎ {letters}Killcam'den çık ve'
+      - ' {letters_black}▎ {letters}olduğun yere dön.'
+      - ''
+      - '{warning}➥ Geçmek için tıkla'
+      - ''
+    actions:
+      - 'exyliakillcam:skip'

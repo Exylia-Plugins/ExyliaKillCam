@@ -1,0 +1,25 @@
+# O botão na barra rápida enquanto assistes a uma killcam.
+#
+# Drawn on the client, never put in the inventory: the viewer's own items stay
+# underneath and come back when the killcam ends. Slots 0-8 are the hotbar.
+
+lock: FULL
+pickup: false
+hide_rest: true
+
+items:
+
+  skip:
+    slot: 4
+    material: BARRIER
+    name: '{error}&lPULAR'
+    lore:
+      - ''
+      - '{secondary}Informação:'
+      - ' {letters_black}▎ {letters}Sai da killcam e volta'
+      - ' {letters_black}▎ {letters}para onde estavas.'
+      - ''
+      - '{warning}➥ Clica para pular'
+      - ''
+    actions:
+      - 'exyliakillcam:skip'

@@ -1,0 +1,54 @@
+name: ExyliaKillCam
+version: '${version}'
+main: net.exylia.exyliaKillCam.ExyliaKillCamPlugin
+api-version: '1.21'
+authors: [ DiGround ]
+website: https://github.com/Exylia-Plugins/ExyliaKillCam
+description: Watch the moment you died again, through your killer's eyes, with their kill effect.
+
+# Kept up to date by ExyliaLib from this repository's GitHub releases.
+exylia-updates: Exylia-Plugins/ExyliaKillCam
+# The oldest ExyliaLib this build runs on; ExyliaLib holds back an update that needs a newer one.
+exylia-lib: '${exyliaLibVersion}'
+
+folia-supported: true
+
+softdepend:
+  # Required, but soft so this plugin still starts without it: it then says where to get ExyliaLib
+  # and stays off until it is installed.
+  - ExyliaLib
+  # Optional: the killer's kill effect plays again at the end of the killcam.
+  - ExyliaKillEffect
+
+libraries:
+  # The same list ExyliaLib declares, in the same order and the same versions.
+  # The server's library loader fetches each one once and shares it, so a plugin
+  # naming a driver it never opens itself costs nothing, while a plugin missing
+  # one that ExyliaLib later needs is a server that starts and then cannot write.
+  # Aligned on purpose: two lists that drift are how a MariaDB server ended up
+  # being sent MySQL 8 syntax.
+  - 'io.github.revxrsal:lamp.common:4.0.0-rc.17'
+  - 'io.github.revxrsal:lamp.bukkit:4.0.0-rc.17'
+  - 'com.github.ben-manes.caffeine:caffeine:3.2.4'
+  - 'com.zaxxer:HikariCP:5.1.0'
+  - 'com.h2database:h2:2.2.224'
+  - 'com.mysql:mysql-connector-j:8.4.0'
+  - 'org.mariadb.jdbc:mariadb-java-client:3.4.1'
+  - 'org.postgresql:postgresql:42.7.4'
+  - 'org.mongodb:mongodb-driver-sync:4.11.1'
+  - 'redis.clients:jedis:5.1.0'
+  - 'org.apache.commons:commons-pool2:2.12.0'
+
+permissions:
+  exyliakillcam.use:
+    description: Shows a killcam after dying and lets the player watch their last death again.
+    default: true
+  exyliakillcam.admin:
+    description: Reloads the plugin.
+    default: op
+  exyliakillcam.*:
+    description: Everything.
+    default: op
+    children:
+      exyliakillcam.use: true
+      exyliakillcam.admin: true
