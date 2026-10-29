@@ -39,8 +39,16 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Every killcam: cut out of the black box when somebody dies, laid down on the
- * temporary world, and watched through the killer's eyes until the body falls.
+ * Every killcam: cut out of the black box when somebody dies, watched where it
+ * happened through the killer's eyes until the body falls.
+ *
+ * <h2>Where it is watched</h2>
+ * A killcam is watched seconds after the death, on the same ground: the viewer
+ * is taken to the real place as a ghost nobody sees, the recorded fight is drawn
+ * for them alone and whoever is really there now is hidden from them
+ * ({@link ReplayViewer#openLive}). Nothing is laid down anywhere, so a capture
+ * keeps no ground of its own, and a death kept for {@code /killcam} weighs only
+ * what moved and what changed.
  *
  * <h2>The shot</h2>
  * The clip starts a few seconds before the death and is watched through the
@@ -98,13 +106,14 @@ public final class KillCams {
         box = Replays.of(core.getPlugin()).blackBox(BlackBoxSettings.defaults()
                 .seconds(settings.killcam().secondsBefore() + AFTER_SECONDS + 1)
                 .radius(settings.recording().radius())
-                .terrain(true)
+                // Watched where it happened: the ground is the real one.
+                .terrain(false)
                 .hidden(player -> hideVanished && PlayerStates.isVanished(player)));
     }
 
     /**
-     * Drops what can no longer be watched. A recording with its ground is not
-     * small, and a player who died once an hour ago should not still be paying for it.
+     * Drops what can no longer be watched: a player who died once an hour ago
+     * should not still be paying for it.
      */
     public void sweep() {
         long now = System.currentTimeMillis();
@@ -152,9 +161,9 @@ public final class KillCams {
         int before = Math.max(1, settings.killcam().secondsBefore());
         Death death = new Death(victim.getUniqueId(), killer.getUniqueId(), nameOf(killer), healthOf(killer),
                 weaponOf(killer), distance(where, killer.getLocation()), System.currentTimeMillis(),
-                recording.capture(victim.getUniqueId(), before + 1, AFTER_SECONDS));
+                recording.capture(victim.getUniqueId(), before + 1, AFTER_SECONDS, false).thenApply(Replay::toBytes));
         // Nobody of them in the box (a vanished player, a server that just started): no killcam, and no noise.
-        death.replay().exceptionally(nothing -> null);
+        death.recording().exceptionally(nothing -> null);
         deaths.put(victim.getUniqueId(), death);
 
         if (held && settings.deaths().skipHeldPlayers()) {
@@ -247,10 +256,10 @@ public final class KillCams {
     }
 
     /**
-     * Puts somebody in a killcam.
+     * Puts somebody in a killcam, where it happened.
      *
-     * <p>The recording is staged first and the player moved only then, so a
-     * killcam that cannot be shown never takes anybody anywhere.
+     * <p>The recording has to be there first, and the player is moved only
+     * then, so a killcam that cannot be shown never takes anybody anywhere.
      *
      * @param asked whether they asked for it, and are told when it cannot be shown
      */
@@ -265,7 +274,7 @@ public final class KillCams {
             if (asked) core.getMessages().send(viewer, lines.busy());
             return;
         }
-        // Held while watching, so a duel request or a queue never picks them up from the stage.
+        // Held while watching, so a duel request or a queue never picks them up halfway.
         if (sessions.claim(viewer, "killcam", () -> {
             skip(viewer);
             return true;
@@ -278,20 +287,16 @@ public final class KillCams {
         viewer.closeInventory();
 
         death.replay()
-                .thenCompose(replay -> Replays.of(core.getPlugin()).stage(replay))
-                .thenAccept(stage -> core.getTasks().runAtEntity(viewer, () -> {
-                    if (!viewer.isOnline() || watching.get(id) != watch) {
-                        stage.close();
-                        return;
-                    }
-                    ReplayViewer.open(core.getPlugin(), viewer, stage, death.victim())
+                .thenAccept(replay -> core.getTasks().runAtEntity(viewer, () -> {
+                    if (!viewer.isOnline() || watching.get(id) != watch) return;
+                    ReplayViewer.openLive(core.getPlugin(), viewer, replay, death.victim())
                             .thenAccept(open -> core.getTasks().runAtEntity(viewer, () -> begin(viewer, watch, open)))
                             .exceptionally(failure -> failed(viewer, watch, failure, asked));
                 }))
                 .exceptionally(failure -> failed(viewer, watch, failure, asked));
     }
 
-    /** On the stage: through the killer's eyes, from the start of the clip. */
+    /** There: through the killer's eyes, from the start of the clip. */
     private void begin(Player viewer, Watch watch, ReplayViewer open) {
         if (watching.get(viewer.getUniqueId()) != watch) {
             // Skipped while it was loading.
@@ -318,7 +323,9 @@ public final class KillCams {
                 .put("time", status.elapsed())
                 .put("length", status.length())
                 .put("bar", status.bar(16, lines.barDone(), lines.barLeft()))).build());
-        open.onLeave(() -> core.getTasks().runAtEntity(viewer, () -> ended(viewer, watch)));
+        // Retired too: a viewer who quits never runs the task, and the watch they
+        // leave behind would keep their death, and its recording, for good.
+        open.onLeave(() -> core.getTasks().runAtEntity(viewer, () -> ended(viewer, watch), () -> ended(viewer, watch)));
         watch.task = core.getTasks().runAtEntityTimer(viewer, 1L, 1L, () -> step(viewer, watch));
     }
 
@@ -412,11 +419,12 @@ public final class KillCams {
 
     private Void failed(Player viewer, Watch watch, Throwable failure, boolean asked) {
         core.getDebug().warn("A killcam could not be shown to " + viewer.getName() + ": " + failure);
-        core.getTasks().runAtEntity(viewer, () -> {
+        Runnable cleanUp = () -> {
             if (watch.task != null) watch.task.cancel();
             if (watching.remove(viewer.getUniqueId(), watch)) sessions.release(viewer);
             if (asked && viewer.isOnline()) core.getMessages().send(viewer, KillCamMessages.get().failed());
-        });
+        };
+        core.getTasks().runAtEntity(viewer, cleanUp, cleanUp);
         return null;
     }
 

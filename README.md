@@ -18,7 +18,7 @@ No resource pack, no client mod: the killcam is built from what the server alrea
 
 ## How it works
 
-ExyliaLib keeps the last seconds around every player in memory. When a player is killed, the seconds before the death are cut out of it, laid down on ExyliaLib's temporary world with the ground they were fought on, and played back to the victim once they respawn. The real world is never touched, and the fight goes on for everybody else.
+ExyliaLib keeps the last seconds around every player in memory. When a player is killed, the seconds before the death are cut out of it and played back to the victim once they respawn, right where it happened: the victim watches as a ghost nobody can see or touch, the recorded fight is drawn for them alone, and whoever is really there now is hidden from them until it ends. The real world is never touched, and the fight goes on for everybody else.
 
 A death another plugin is in charge of (a duel, an event, a match, an FFA arena, anything that holds the player or takes over what they drop) waits until that plugin lets the player go, and plays then. Deaths those plugins cancel count too. While somebody watches, they are held themselves, so nothing else picks them up halfway.
 
