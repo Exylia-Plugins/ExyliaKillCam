@@ -86,8 +86,9 @@ public record KillCamSettings(
             @Comment("Worlds where nobody gets a killcam.")
             List<String> disabledWorlds,
 
-            @Comment("Whether deaths another plugin is in charge of are left alone: a duel, an event, a match,")
-            @Comment("anything that holds the player or takes over what they drop. Keep it on.")
+            @Comment("Whether a death another plugin is in charge of (a duel, an event, a match, an FFA arena,")
+            @Comment("anything that holds the player or takes over what they drop) waits until that plugin lets")
+            @Comment("the player go, and plays then. Keep it on.")
             boolean skipHeldPlayers) {
 
         public Deaths() {

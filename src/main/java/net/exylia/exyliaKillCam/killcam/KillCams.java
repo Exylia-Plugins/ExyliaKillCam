@@ -51,15 +51,16 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * <h2>Other plugins</h2>
  * A death another plugin is in charge of — the player is held by a duel, an
- * event or a queue, or something takes over what they drop — is left alone, and
- * a player watching is held themselves, so nothing else picks them up halfway.
+ * event or a match, or something takes over what they drop — waits until that
+ * plugin lets them go, and a player watching is held themselves, so nothing else
+ * picks them up halfway.
  */
 public final class KillCams {
 
     /** Seconds the recording keeps after the death: the fall and the puff. */
     private static final int AFTER_SECONDS = 2;
 
-    /** A death is offered once, after the respawn that follows it. */
+    /** A death is offered once, after the respawn or the release that follows it, this soon. */
     private static final long OFFER_MILLIS = 60_000L;
 
     /** A kill effect belongs to the death it played on when it is this close to it. */
@@ -74,6 +75,8 @@ public final class KillCams {
     private final PluginSessions sessions;
     private final Map<UUID, Death> deaths = new ConcurrentHashMap<>();
     private final Set<UUID> unseen = ConcurrentHashMap.newKeySet();
+    /** Died while another plugin held them: offered once it lets them go. */
+    private final Set<UUID> waiting = ConcurrentHashMap.newKeySet();
     private final Map<UUID, Effect> effects = new ConcurrentHashMap<>();
     private final Map<UUID, Watch> watching = new ConcurrentHashMap<>();
     private volatile ReplayBlackBox box;
@@ -81,6 +84,9 @@ public final class KillCams {
     public KillCams(@NotNull ExyliaKillCam core) {
         this.core = core;
         this.sessions = Sessions.of(core.getPlugin());
+        Sessions.watch(core.getPlugin(), null, claim -> {
+            if (!claim.plugin().equals(core.getPlugin().getName())) released(claim.player());
+        });
     }
 
     // --------------------------------------------------------------- lifetime
@@ -105,6 +111,7 @@ public final class KillCams {
         long keep = Math.max(OFFER_MILLIS, Math.max(1, KillCamSettings.get().killcam().rewatchMinutes()) * 60_000L);
         deaths.entrySet().removeIf(entry -> !entry.getValue().isFresh(now, keep)
                 && !watching.containsKey(entry.getKey()));
+        waiting.removeIf(id -> !deaths.containsKey(id));
         effects.values().removeIf(effect -> now - effect.at > EFFECT_MILLIS * 4);
     }
 
@@ -128,24 +135,36 @@ public final class KillCams {
 
     /**
      * Somebody died at somebody's hands: the seconds before are cut out of the
-     * box, and the respawn decides what happens next.
+     * box, and the respawn, or the plugin holding them letting go, decides what
+     * happens next.
+     *
+     * @param where where they died
+     * @param held  whether another plugin held them when the death began
      */
-    public void died(@NotNull Player victim, @NotNull Entity killer) {
-        ReplayBlackBox held = box;
-        if (held == null || !victim.hasPermission(Permissions.USE)) return;
+    public void died(@NotNull Player victim, @NotNull Entity killer, @NotNull Location where, boolean held) {
+        ReplayBlackBox recording = box;
+        if (recording == null || !victim.hasPermission(Permissions.USE)) return;
         KillCamSettings settings = KillCamSettings.get();
-        String world = victim.getWorld().getName();
+        String world = where.getWorld().getName();
         if (settings.deaths().disabledWorlds().stream().anyMatch(world::equalsIgnoreCase)) return;
-        if (settings.deaths().skipHeldPlayers() && isHeld(victim)) return;
         if (watching.containsKey(victim.getUniqueId())) return;
 
         int before = Math.max(1, settings.killcam().secondsBefore());
         Death death = new Death(victim.getUniqueId(), killer.getUniqueId(), nameOf(killer), healthOf(killer),
-                weaponOf(killer), distance(victim.getLocation(), killer.getLocation()), System.currentTimeMillis(),
-                held.capture(victim.getUniqueId(), before + 1, AFTER_SECONDS));
+                weaponOf(killer), distance(where, killer.getLocation()), System.currentTimeMillis(),
+                recording.capture(victim.getUniqueId(), before + 1, AFTER_SECONDS));
         // Nobody of them in the box (a vanished player, a server that just started): no killcam, and no noise.
         death.replay().exceptionally(nothing -> null);
         deaths.put(victim.getUniqueId(), death);
+
+        if (held && settings.deaths().skipHeldPlayers()) {
+            unseen.remove(victim.getUniqueId());
+            waiting.add(victim.getUniqueId());
+            // Let go while the death was being handled (left the arena on death): nobody will say so again.
+            if (!isHeld(victim)) released(victim.getUniqueId());
+            return;
+        }
+        waiting.remove(victim.getUniqueId());
         unseen.add(victim.getUniqueId());
 
         if (settings.killcam().autoRespawn() && mode(victim) == KillCamSettings.Mode.AUTO) {
@@ -157,7 +176,25 @@ public final class KillCams {
 
     /** They are back: the killcam starts, is offered, or nothing, as they chose. */
     public void respawned(@NotNull Player player) {
-        if (!unseen.remove(player.getUniqueId())) return;
+        if (unseen.remove(player.getUniqueId())) offer(player);
+    }
+
+    /**
+     * Another plugin let go of somebody. A second later, once it has put them
+     * back and nobody else took them, the death they had there is offered.
+     */
+    private void released(@NotNull UUID id) {
+        Player player = Bukkit.getPlayer(id);
+        if (player == null || !waiting.contains(id)) return;
+        core.getTasks().runAtEntityLater(player, 20L, () -> {
+            // Still held or dead: the next release tries again.
+            if (!player.isOnline() || player.isDead() || isHeld(player) || !waiting.remove(id)) return;
+            offer(player);
+        });
+    }
+
+    /** The last death, as the player chose: watched, offered, or nothing. */
+    private void offer(@NotNull Player player) {
         Death death = deaths.get(player.getUniqueId());
         if (death == null || !death.isFresh(System.currentTimeMillis(), OFFER_MILLIS)) return;
         switch (mode(player)) {
@@ -180,6 +217,7 @@ public final class KillCams {
         UUID id = player.getUniqueId();
         deaths.remove(id);
         unseen.remove(id);
+        waiting.remove(id);
         effects.remove(id);
         skip(player);
     }
@@ -188,7 +226,7 @@ public final class KillCams {
      * Whether another plugin is in charge of this player: a duel, an event, a
      * queue, a match, or anything that takes over what they drop.
      */
-    private static boolean isHeld(Player player) {
+    static boolean isHeld(@NotNull Player player) {
         return !Sessions.isFree(player) || DeathDrops.claimedBy(player).isPresent()
                 || ReplayViewer.of(player) != null;
     }
@@ -204,6 +242,7 @@ public final class KillCams {
             return;
         }
         unseen.remove(player.getUniqueId());
+        waiting.remove(player.getUniqueId());
         watch(player, death, true);
     }
 

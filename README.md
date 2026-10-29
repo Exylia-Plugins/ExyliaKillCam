@@ -20,7 +20,7 @@ No resource pack, no client mod: the killcam is built from what the server alrea
 
 ExyliaLib keeps the last seconds around every player in memory. When a player is killed, the seconds before the death are cut out of it, laid down on ExyliaLib's temporary world with the ground they were fought on, and played back to the victim once they respawn. The real world is never touched, and the fight goes on for everybody else.
 
-A death another plugin is in charge of is left alone: a duel, an event, a match, a queue, anything that holds the player or takes over what they drop. While somebody watches, they are held themselves, so nothing else picks them up halfway.
+A death another plugin is in charge of (a duel, an event, a match, an FFA arena, anything that holds the player or takes over what they drop) waits until that plugin lets the player go, and plays then. Deaths those plugins cancel count too. While somebody watches, they are held themselves, so nothing else picks them up halfway.
 
 ## Updates
 
