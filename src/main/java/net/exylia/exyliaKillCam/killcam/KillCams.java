@@ -310,7 +310,11 @@ public final class KillCams {
         watch.timeline = Timeline.of(replay, death.victim(), settings.secondsBefore() * 20,
                 (int) Math.round(settings.slowMotionSeconds() * 20));
         if (watch.timeline.start() > 0) open.playback().seek(watch.timeline.start());
-        if (settings.firstPerson() && replay.actor(death.killer()) != null) open.follow(death.killer());
+        // The killer's own screen: everybody as late as their connection
+        // showed them, so the crosshair is on the body they were aiming at.
+        if (settings.firstPerson() && replay.actor(death.killer()) != null) {
+            open.follow(death.killer(), ReplayPlayback.View.ATTACKER);
+        }
 
         KillCamMessages lines = KillCamMessages.get();
         Values names = Values.of().putText("killer", death.killerName());
