@@ -71,10 +71,14 @@ public record KillCamSettings(
             boolean autoRespawn,
 
             @Comment("How long /killcam can still show a player's last death.")
-            @Time(Time.Unit.MINUTES) int rewatchMinutes) {
+            @Time(Time.Unit.MINUTES) int rewatchMinutes,
+
+            @Comment("Whether each hit the victim took is written in their chat as the killcam passes it:")
+            @Comment("who, how much and which hit it was. Never reach or aim numbers.")
+            boolean narrateHits) {
 
         public Killcam() {
-            this(Mode.AUTO, 6, 1.0, 0.35, true, 3, true, 5);
+            this(Mode.AUTO, 6, 1.0, 0.35, true, 3, true, 5, true);
         }
     }
 

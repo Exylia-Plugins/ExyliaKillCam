@@ -37,6 +37,7 @@ ExyliaLib checks this plugin's GitHub releases and announces a new version in th
 - `killcam.hold-seconds`: how long the camera stays on the body.
 - `killcam.auto-respawn`: players in `AUTO` skip the death screen.
 - `killcam.rewatch-minutes`: how long `/killcam` can still show the last death.
+- `killcam.narrate-hits`: writes each hit the victim took in their chat as the killcam passes it (who, how much, which hit), never reach or aim numbers.
 - `deaths.mobs`, `deaths.disabled-worlds`, `deaths.skip-held-players`: which deaths get one.
 - `recording.radius`, `recording.hide-vanished`: what the killcam shows around the victim.
 - `kill-effects.replay`: the killer's ExyliaKillEffect effect at the end.

@@ -4,6 +4,7 @@ subtitle: '{letters}Asesinado por {highlight}%killer%'
 hud: '{error}&lKILLCAM {letters_black}» {letters}%killer% {letters_black}▎ %bar% {info}%time%{letters_black}/{info}%length% ⌚'
 bar-done: '{error}▌'
 bar-left: '{letters_black}▌'
+hit: '%prefix% {highlight}%player% {letters}te golpeó por {error}%damage%❤ {letters_black}(golpe #%number%)'
 summary:
   - ''
   - '%prefix% {letters}Asesinado por {highlight}%killer%'

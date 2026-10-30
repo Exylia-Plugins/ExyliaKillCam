@@ -26,6 +26,9 @@ public record KillCamMessages(
         String hud,
         String barDone,
         String barLeft,
+        @Comment("Each hit you took, as the killcam passes it. %player% who hit you, %damage% in hearts,")
+        @Comment("%number% which hit of theirs it was.")
+        String hit,
 
         @Comment("")
         @Comment("After it. %killer%, %health% the hearts they had left, %weapon% what they held,")
@@ -62,6 +65,7 @@ public record KillCamMessages(
                 "{error}&lKILLCAM {letters_black}» {letters}%killer% {letters_black}▎ %bar% {info}%time%{letters_black}/{info}%length% ⌚",
                 "{error}▌",
                 "{letters_black}▌",
+                "%prefix% {highlight}%player% {letters}hit you for {error}%damage%❤ {letters_black}(hit #%number%)",
                 List.of("",
                         "%prefix% {letters}Killed by {highlight}%killer%",
                         " {letters_black}▎ {letters}Health left {letters_black}» {error}%health% ❤",

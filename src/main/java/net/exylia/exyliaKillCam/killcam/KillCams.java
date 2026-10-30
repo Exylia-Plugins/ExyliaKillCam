@@ -7,7 +7,10 @@ import net.exylia.exyliaKillCam.config.KillCamSettings;
 import net.exylia.lib.api.killeffect.KillEffectService;
 import net.exylia.lib.replay.BlackBoxSettings;
 import net.exylia.lib.replay.Replay;
+import net.exylia.lib.replay.ReplayActor;
 import net.exylia.lib.replay.ReplayBlackBox;
+import net.exylia.lib.replay.ReplayHit;
+import net.exylia.lib.replay.ReplayMark;
 import net.exylia.lib.replay.ReplayPlayback;
 import net.exylia.lib.replay.ReplayViewer;
 import net.exylia.lib.replay.Replays;
@@ -330,7 +333,32 @@ public final class KillCams {
         // Retired too: a viewer who quits never runs the task, and the watch they
         // leave behind would keep their death, and its recording, for good.
         open.onLeave(() -> core.getTasks().runAtEntity(viewer, () -> ended(viewer, watch), () -> ended(viewer, watch)));
+        if (settings.narrateHits()) {
+            open.onMark(mark -> core.getTasks().runAtEntity(viewer, () -> narrate(viewer, replay, death, mark)));
+        }
         watch.task = core.getTasks().runAtEntityTimer(viewer, 1L, 1L, () -> step(viewer, watch));
+    }
+
+    /**
+     * A hit the victim took, as damage only: no reach or aim numbers, which
+     * would only invite players to accuse each other.
+     */
+    private void narrate(Player viewer, Replay replay, Death death, ReplayMark mark) {
+        if (!viewer.isOnline() || watching.get(viewer.getUniqueId()) == null) return;
+        ReplayHit hit = replay.hit(mark);
+        if (hit == null || !hit.confirmed() || !hit.target().equals(death.victim())) return;
+        ReplayActor attacker = replay.actor(hit.attacker());
+        core.getMessages().send(viewer, KillCamMessages.get().hit(), Values.of()
+                .putText("player", attacker == null ? death.killerName() : attacker.name())
+                .put("damage", hearts(hit.damage()))
+                .put("number", String.valueOf(replay.tally(hit).number())));
+    }
+
+    /** Health points as hearts: {@code 6.0} is {@code 3}, {@code 5.0} is {@code 2.5}. */
+    static @NotNull String hearts(double health) {
+        if (Double.isNaN(health)) return "?";
+        String text = String.format(Locale.ROOT, "%.1f", health / 2.0);
+        return text.endsWith(".0") ? text.substring(0, text.length() - 2) : text;
     }
 
     /** Every tick while it plays: the slow motion, the cut, and the end. */
