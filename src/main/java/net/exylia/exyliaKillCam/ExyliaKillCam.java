@@ -132,7 +132,7 @@ public final class ExyliaKillCam {
                 .label("auto", lines.modeAuto())
                 .label("ask", lines.modeAsk())
                 .label("off", lines.modeOff())
-                .permission(Permissions.USE)
+                .permission(Permissions.MODE)
                 .build());
     }
 

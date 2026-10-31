@@ -21,10 +21,11 @@ import java.util.concurrent.CompletableFuture;
  * @param weapon       what they held, as plain text
  * @param distance     how far apart the two were, in blocks
  * @param at           when, in milliseconds
+ * @param keepMillis   how long it stays watchable with {@code /killcam}, read from the victim's rank when they died
  * @param recording    the recording, written out; completed once the seconds after the death are in it
  */
 public record Death(@NotNull UUID victim, @NotNull UUID killer, @NotNull String killerName, double killerHealth,
-                    @NotNull String weapon, double distance, long at, @NotNull CompletableFuture<byte[]> recording) {
+                    @NotNull String weapon, double distance, long at, long keepMillis, @NotNull CompletableFuture<byte[]> recording) {
 
     /** The recording, read back to be watched. */
     public @NotNull CompletableFuture<Replay> replay() {

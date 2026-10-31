@@ -17,20 +17,20 @@ import revxrsal.commands.bukkit.annotation.CommandPermission;
 public class KillCamCommand {
 
     @CommandPlaceholder
-    @CommandPermission(Permissions.USE)
+    @CommandPermission(Permissions.REWATCH)
     public void watch(Player player) {
         ExyliaKillCam.get().getKillCams().watchLast(player);
     }
 
+    /** Never gated: getting out of a killcam must always work. */
     @Subcommand("skip")
-    @CommandPermission(Permissions.USE)
     public void skip(Player player) {
         ExyliaKillCam.get().getKillCams().skip(player);
     }
 
     /** {@code AUTO}, {@code ASK} or {@code OFF}; the same choice {@code /settings} shows. */
     @Subcommand("mode")
-    @CommandPermission(Permissions.USE)
+    @CommandPermission(Permissions.MODE)
     public void mode(Player player, KillCamSettings.Mode mode) {
         ExyliaKillCam core = ExyliaKillCam.get();
         if (!core.getKillCams().mode(player, mode)) return;

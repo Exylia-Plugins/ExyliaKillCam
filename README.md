@@ -48,10 +48,12 @@ Messages and the hotbar live in `lang/<code>/` (English, Spanish, Portuguese, Fr
 
 | Command | Permission | |
 | --- | --- | --- |
-| `/killcam` | `exyliakillcam.use` | Watches your last death again |
-| `/killcam skip` | `exyliakillcam.use` | Leaves the killcam (also the button on the hotbar) |
-| `/killcam mode <auto\|ask\|off>` | `exyliakillcam.use` | What you get after dying; also on ExyliaLib's `/settings` |
+| `/killcam` | `exyliakillcam.rewatch` | Watches your last death again |
+| `/killcam skip` | none | Leaves the killcam (also the button on the hotbar) |
+| `/killcam mode <auto\|ask\|off>` | `exyliakillcam.mode` | What you get after dying; also on ExyliaLib's `/settings` |
 | `/killcam reload` | `exyliakillcam.admin` | Reloads the config, messages and hotbar |
+
+`exyliakillcam.use` gives the killcam after dying. Every player node defaults to true, so a server makes one a rank perk by denying it to the default group. `exyliakillcam.rewatch.<n>` keeps a rank's last death watchable for `<n>` minutes instead of `rewatch-minutes` (the highest wins).
 
 ## Building
 

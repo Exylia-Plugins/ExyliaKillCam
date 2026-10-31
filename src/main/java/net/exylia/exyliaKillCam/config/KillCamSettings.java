@@ -71,6 +71,7 @@ public record KillCamSettings(
             boolean autoRespawn,
 
             @Comment("How long /killcam can still show a player's last death.")
+            @Comment("exyliakillcam.rewatch.<n> gives a rank <n> minutes instead; the highest wins.")
             @Time(Time.Unit.MINUTES) int rewatchMinutes,
 
             @Comment("Whether each hit the victim took is written in their chat as the killcam passes it:")

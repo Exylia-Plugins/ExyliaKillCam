@@ -120,8 +120,7 @@ public final class KillCams {
      */
     public void sweep() {
         long now = System.currentTimeMillis();
-        long keep = Math.max(OFFER_MILLIS, Math.max(1, KillCamSettings.get().killcam().rewatchMinutes()) * 60_000L);
-        deaths.entrySet().removeIf(entry -> !entry.getValue().isFresh(now, keep)
+        deaths.entrySet().removeIf(entry -> !entry.getValue().isFresh(now, Math.max(OFFER_MILLIS, entry.getValue().keepMillis()))
                 && !watching.containsKey(entry.getKey()));
         waiting.removeIf(id -> !deaths.containsKey(id));
         effects.values().removeIf(effect -> now - effect.at > EFFECT_MILLIS * 4);
@@ -163,7 +162,7 @@ public final class KillCams {
 
         int before = Math.max(1, settings.killcam().secondsBefore());
         Death death = new Death(victim.getUniqueId(), killer.getUniqueId(), nameOf(killer), healthOf(killer),
-                weaponOf(killer), distance(where, killer.getLocation()), System.currentTimeMillis(),
+                weaponOf(killer), distance(where, killer.getLocation()), System.currentTimeMillis(), Permissions.rewatchMillis(victim),
                 recording.capture(victim.getUniqueId(), before + 1, AFTER_SECONDS, false).thenApply(Replay::toBytes));
         // Nobody of them in the box (a vanished player, a server that just started): no killcam, and no noise.
         death.recording().exceptionally(nothing -> null);
@@ -248,8 +247,7 @@ public final class KillCams {
     /** {@code /killcam}: the last death again, while it is still kept. */
     public void watchLast(@NotNull Player player) {
         Death death = deaths.get(player.getUniqueId());
-        long keep = Math.max(1, KillCamSettings.get().killcam().rewatchMinutes()) * 60_000L;
-        if (death == null || !death.isFresh(System.currentTimeMillis(), keep)) {
+        if (death == null || !death.isFresh(System.currentTimeMillis(), death.keepMillis())) {
             core.getMessages().send(player, KillCamMessages.get().noRecentDeath());
             return;
         }

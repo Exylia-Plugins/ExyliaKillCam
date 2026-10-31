@@ -40,9 +40,19 @@ libraries:
   - 'org.apache.commons:commons-pool2:2.12.0'
 
 permissions:
+  # Player features. Everybody holds them, so a server makes one a rank perk by denying
+  # it to the default group. Skipping a killcam never needs one.
   exyliakillcam.use:
-    description: Shows a killcam after dying and lets the player watch their last death again.
+    description: Shows a killcam after dying.
     default: true
+  exyliakillcam.rewatch:
+    description: Watch the last death again with /killcam.
+    default: true
+  exyliakillcam.mode:
+    description: Choose what happens after dying, with /killcam mode or /settings.
+    default: true
+  # Numbers: the highest one a player holds wins.
+  #   exyliakillcam.rewatch.<n>   minutes /killcam can still show the last death (default: killcam.rewatch-minutes)
   exyliakillcam.admin:
     description: Reloads the plugin.
     default: op
@@ -51,4 +61,6 @@ permissions:
     default: op
     children:
       exyliakillcam.use: true
+      exyliakillcam.rewatch: true
+      exyliakillcam.mode: true
       exyliakillcam.admin: true
