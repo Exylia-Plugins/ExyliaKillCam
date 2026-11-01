@@ -80,7 +80,7 @@ public final class ExyliaKillCam {
         hotbar = new KillCamHotbar(this);
         hotbar.load();
 
-        plugin.getServer().getPluginManager().registerEvents(new KillCamListener(killCams), plugin);
+        plugin.getServer().getPluginManager().registerEvents(new KillCamListener(plugin, killCams), plugin);
 
         BukkitLamp.builder(plugin).build().register(new KillCamCommand());
 

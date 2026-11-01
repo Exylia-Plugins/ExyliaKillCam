@@ -1,9 +1,9 @@
 package net.exylia.exyliaKillCam.killcam;
 
-import com.destroystokyo.paper.event.player.PlayerPostRespawnEvent;
 import net.exylia.exyliaKillCam.config.KillCamSettings;
 import net.exylia.lib.api.ffa.event.FfaDeathEvent;
 import net.exylia.lib.api.killeffect.event.KillEffectPlayEvent;
+import net.exylia.lib.respawn.Respawns;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
@@ -13,6 +13,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
@@ -28,8 +29,9 @@ public final class KillCamListener implements Listener {
     /** Who ExyliaFFA credits, for a victim nobody landed the last blow on. */
     private final Map<UUID, Player> credited = new ConcurrentHashMap<>();
 
-    public KillCamListener(@NotNull KillCams killCams) {
+    public KillCamListener(@NotNull Plugin plugin, @NotNull KillCams killCams) {
         this.killCams = killCams;
+        Respawns.of(plugin).after(killCams::respawned);
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -56,11 +58,6 @@ public final class KillCamListener implements Listener {
         Entity killer = killer(event);
         if (killer == null) killer = ffaKiller;
         if (killer != null && !killer.equals(victim)) killCams.died(victim, killer, moment.where(), moment.held());
-    }
-
-    @EventHandler(priority = EventPriority.MONITOR)
-    public void onRespawn(PlayerPostRespawnEvent event) {
-        killCams.respawned(event.getPlayer());
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
