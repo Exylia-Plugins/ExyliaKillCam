@@ -500,7 +500,7 @@ public final class KillCams {
         EntityEquipment equipment = killer instanceof LivingEntity living ? living.getEquipment() : null;
         ItemStack held = equipment == null ? null : equipment.getItemInMainHand();
         if (held == null || held.getType().isAir()) return KillCamMessages.get().fists();
-        return PlainTextComponentSerializer.plainText().serialize(held.effectiveName());
+        return PlainTextComponentSerializer.plainText().serialize(net.exylia.lib.platform.ItemNames.of(held));
     }
 
     private static double distance(Location a, Location b) {
