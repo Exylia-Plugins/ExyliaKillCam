@@ -4,6 +4,7 @@ import net.exylia.exyliaKillCam.ExyliaKillCam;
 import net.exylia.exyliaKillCam.Permissions;
 import net.exylia.exyliaKillCam.config.KillCamMessages;
 import net.exylia.exyliaKillCam.config.KillCamSettings;
+import net.exylia.lib.config.ConfigMenus;
 import net.exylia.lib.text.Values;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -49,5 +50,11 @@ public class KillCamCommand {
         ExyliaKillCam core = ExyliaKillCam.get();
         core.reload(sender);
         core.getMessages().send(sender, KillCamMessages.get().reloaded());
+    }
+
+    @Subcommand("settings")
+    @CommandPermission(Permissions.ADMIN)
+    public void settings(Player player) {
+        ConfigMenus.of(ExyliaKillCam.get().getPlugin()).permission(Permissions.ADMIN).open(player);
     }
 }

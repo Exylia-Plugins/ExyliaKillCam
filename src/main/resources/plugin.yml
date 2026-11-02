@@ -54,7 +54,7 @@ permissions:
   # Numbers: the highest one a player holds wins.
   #   exyliakillcam.rewatch.<n>   minutes /killcam can still show the last death (default: killcam.rewatch-minutes)
   exyliakillcam.admin:
-    description: Reloads the plugin.
+    description: Reloads the plugin and changes its settings in game.
     default: op
   exyliakillcam.*:
     description: Everything.
