@@ -3,6 +3,8 @@
 # Drawn on the client, never put in the inventory: the viewer's own items stay
 # underneath and come back when the killcam ends. Slots 0-8 are the hotbar.
 
+menu-version: 1
+
 lock: FULL
 pickup: false
 hide_rest: true
@@ -12,14 +14,14 @@ items:
   skip:
     slot: 4
     material: BARRIER
-    name: '{error}&lSALTAR'
+    name: "{letters}Killcam {letters_black}▸ <gradient:{error}:{error_light}>Saltar</gradient>"
     lore:
-      - ''
-      - '{secondary}Información:'
-      - ' {letters_black}▎ {letters}Sal de la killcam y vuelve'
-      - ' {letters_black}▎ {letters}a donde estabas.'
-      - ''
-      - '{warning}➥ Clic para saltar'
-      - ''
+      - "{letters_black}Acción de la killcam"
+      - ""
+      - "{error}✎ Información"
+      - " {letters}Sal de la killcam y vuelve"
+      - " {letters}a donde estabas."
+      - ""
+      - "{error}» Clic para saltar"
     actions:
       - 'exyliakillcam:skip'
