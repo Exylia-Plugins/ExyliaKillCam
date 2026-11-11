@@ -12,7 +12,8 @@ import revxrsal.commands.annotation.CommandPlaceholder;
 import revxrsal.commands.annotation.Subcommand;
 import revxrsal.commands.bukkit.annotation.CommandPermission;
 
-/** {@code /killcam}: the last death again, the skip button, and what happens after dying. */
+/** {@code /killcam}: the last death again, the skip button, and what happens after dying.
+ * Staff commands live under {@code /killcamadmin}; the old {@code /killcam reload|settings} still work. */
 @Command({"killcam", "exyliakillcam"})
 public class KillCamCommand {
 
@@ -43,7 +44,7 @@ public class KillCamCommand {
         core.getMessages().send(player, lines.modeSet(), Values.of("mode", name));
     }
 
-    @Subcommand("reload")
+    @Command({"killcamadmin reload", "killcam reload", "exyliakillcam reload"})
     @CommandPermission(Permissions.ADMIN)
     public void reload(CommandSender sender) {
         ExyliaKillCam core = ExyliaKillCam.get();
@@ -51,7 +52,7 @@ public class KillCamCommand {
         core.getMessages().send(sender, KillCamMessages.get().reloaded());
     }
 
-    @Subcommand("settings")
+    @Command({"killcamadmin settings", "killcam settings", "exyliakillcam settings"})
     @CommandPermission(Permissions.ADMIN)
     public void settings(Player player) {
         ExyliaKillCam.get().getSettings().openHub(player);
