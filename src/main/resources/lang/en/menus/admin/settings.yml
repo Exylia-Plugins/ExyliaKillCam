@@ -1,0 +1,71 @@
+# DO NOT EDIT — REGENERATED ON EVERY STARTUP.
+#
+# Settings an admin tunes, one card per module. Everything else stays in the files.
+
+title: "{primary}&lKILLCAM {letters_black}» {highlight}Settings"
+size: 27
+type: SIMPLE
+
+open_sounds:
+  - "minecraft:block.ender_chest.open|1.0|1.4"
+click_sounds:
+  - "minecraft:block.note_block.hat|1.0|1.0"
+close_sounds:
+  - "minecraft:block.barrel.close|1.0|0.7"
+
+filler:
+  global:
+    material: GRAY_STAINED_GLASS_PANE
+    hide_tooltip: true
+
+items:
+  header:
+    slot: 4
+    material: COMPARATOR
+    name: "<gradient:{primary}:{secondary_light}>Settings</gradient>"
+    lore:
+      - "{letters_black}Killcam settings"
+      - ""
+      - "{primary}✎ Information"
+      - " {letters}The settings worth changing in"
+      - " {letters}game, grouped by theme. The"
+      - " {letters}rest stays in the files."
+
+  playback:
+    slot: 12
+    material: SPYGLASS
+    name: "{letters}Settings {letters_black}▸ <gradient:{primary}:{secondary_light}>Playback</gradient>"
+    lore:
+      - "{letters_black}Settings page"
+      - ""
+      - "{primary}✎ Information"
+      - " {letters}Length, speed and viewpoint."
+      - ""
+      - "{primary}✦ Status"
+      - "  {letters_black}· {info}{icon:clock} {letters}Before death{letters_black}: %playback_killcam_seconds_before%"
+      - "  {letters_black}· {info}{icon:clock} {letters}Slow motion{letters_black}: %playback_killcam_slow_motion_seconds%"
+      - ""
+      - "{primary}{icon:click} Click to open"
+      - "{letters_black}Each setting, explained."
+    actions:
+      - "exyliakillcam:settings_page playback"
+
+  deaths:
+    slot: 14
+    material: BONE
+    name: "{letters}Settings {letters_black}▸ <gradient:{primary}:{secondary_light}>Deaths</gradient>"
+    lore:
+      - "{letters_black}Settings page"
+      - ""
+      - "{primary}✎ Information"
+      - " {letters}Mobs, worlds and how long a"
+      - " {letters}death stays watchable."
+      - ""
+      - "{primary}✦ Status"
+      - "  {letters_black}· {info}{icon:clock} {letters}Rewatch{letters_black}: %deaths_killcam_rewatch_minutes%"
+      - "  {letters_black}· {info}{icon:star} {letters}Mob deaths{letters_black}: %deaths_deaths_mobs%"
+      - ""
+      - "{primary}{icon:click} Click to open"
+      - "{letters_black}Each setting, explained."
+    actions:
+      - "exyliakillcam:settings_page deaths"

@@ -3,6 +3,7 @@ package net.exylia.exyliaKillCam.config;
 import net.exylia.lib.config.Comment;
 import net.exylia.lib.config.ConfigFile;
 import net.exylia.lib.config.Languages;
+import net.exylia.lib.config.Menu;
 import net.exylia.lib.config.Time;
 
 import java.util.List;
@@ -52,19 +53,19 @@ public record KillCamSettings(
             Mode defaultMode,
 
             @Comment("How much of the fight is shown before the death.")
-            @Time(Time.Unit.SECONDS) int secondsBefore,
+            @Time(Time.Unit.SECONDS) @Menu.Range(min = 1, max = 60) int secondsBefore,
 
             @Comment("How long the last moment before the death plays in slow motion, in seconds. 0 = never.")
-            double slowMotionSeconds,
+            @Menu.Range(min = 0, max = 10, step = 0.5) double slowMotionSeconds,
 
             @Comment("How fast that slow motion plays: 0.5 is half speed.")
-            double slowMotionSpeed,
+            @Menu.Range(min = 0.1, max = 1, step = 0.05) double slowMotionSpeed,
 
             @Comment("Whether the killcam is watched through the killer's eyes. false = from behind the victim.")
             boolean firstPerson,
 
             @Comment("How long the camera stays on the body after the death, for the fall and the kill effect.")
-            @Time(Time.Unit.SECONDS) int holdSeconds,
+            @Time(Time.Unit.SECONDS) @Menu.Range(min = 0, max = 30) int holdSeconds,
 
             @Comment("Whether players respawn by themselves, so the killcam follows the death without a click.")
             @Comment("Only for players whose mode is AUTO.")
@@ -72,7 +73,7 @@ public record KillCamSettings(
 
             @Comment("How long /killcam can still show a player's last death.")
             @Comment("exyliakillcam.rewatch.<n> gives a rank <n> minutes instead; the highest wins.")
-            @Time(Time.Unit.MINUTES) int rewatchMinutes,
+            @Time(Time.Unit.MINUTES) @Menu.Range(min = 0, max = 1440) int rewatchMinutes,
 
             @Comment("Whether each hit the victim took is written in their chat as the killcam passes it:")
             @Comment("who, how much and which hit it was. Never reach or aim numbers.")
@@ -104,7 +105,7 @@ public record KillCamSettings(
     /** The {@code recording} section. */
     public record Recording(
             @Comment("How far around the victim the killcam shows what happened, in blocks (8-96).")
-            double radius,
+            @Menu.Range(min = 8, max = 96, step = 4) double radius,
 
             @Comment("Whether players in vanish are kept out of every killcam.")
             boolean hideVanished) {
@@ -130,6 +131,11 @@ public record KillCamSettings(
     /** Keeps the loaded file so {@link #get()} reads the current snapshot. */
     public static void install(ConfigFile<KillCamSettings> loaded) {
         file = loaded;
+    }
+
+    /** The loaded file, for the settings screens. */
+    public static ConfigFile<KillCamSettings> file() {
+        return file;
     }
 
     /** The current snapshot, or the defaults before the file loaded: never {@code null}. */

@@ -1,0 +1,173 @@
+# DO NOT EDIT — REGENERATED ON EVERY STARTUP.
+#
+# How a killcam plays. Everything else is in config.yml.
+
+title: "{primary}&lSETTINGS {letters_black}» {highlight}Playback"
+size: 27
+type: SIMPLE
+
+open_sounds:
+  - "minecraft:block.ender_chest.open|1.0|1.4"
+click_sounds:
+  - "minecraft:block.note_block.hat|1.0|1.0"
+close_sounds:
+  - "minecraft:block.barrel.close|1.0|0.7"
+
+filler:
+  global:
+    material: GRAY_STAINED_GLASS_PANE
+    hide_tooltip: true
+
+items:
+  header:
+    slot: 4
+    material: SPYGLASS
+    name: "<gradient:{primary}:{secondary_light}>Playback</gradient>"
+    lore:
+      - "{letters_black}Playback settings"
+      - ""
+      - "{primary}✎ Information"
+      - " {letters}What a killcam shows and how."
+
+  killcam-default-mode:
+    slot: 10
+    material: COMPARATOR
+    name: "{letters}Playback {letters_black}▸ <gradient:{primary}:{secondary_light}>Default mode</gradient>"
+    lore:
+      - "{letters_black}Playback setting"
+      - ""
+      - "{primary}✎ Information"
+      - " {letters}What players get until they"
+      - " {letters}pick with {highlight}/killcam mode{letters}."
+      - ""
+      - "{primary}✦ Status"
+      - "  {letters_black}· {info}{icon:star} {letters}Mode{letters_black}: %playback_killcam_default_mode%"
+      - "  {letters_black}· {info}{icon:book} {letters}Default{letters_black}: %playback_killcam_default_mode_default%"
+      - ""
+      - "%playback_killcam_default_mode_click%"
+    actions:
+      - "exyliakillcam:setting playback killcam.default-mode"
+
+  killcam-seconds-before:
+    slot: 11
+    material: CLOCK
+    name: "{letters}Playback {letters_black}▸ <gradient:{primary}:{secondary_light}>Seconds before</gradient>"
+    lore:
+      - "{letters_black}Playback setting"
+      - ""
+      - "{primary}✎ Information"
+      - " {letters}How much of the fight is shown"
+      - " {letters}before the death."
+      - ""
+      - "{primary}✦ Status"
+      - "  {letters_black}· {info}{icon:clock} {letters}Length{letters_black}: %playback_killcam_seconds_before%"
+      - "  {letters_black}· {info}{icon:book} {letters}Default{letters_black}: %playback_killcam_seconds_before_default%"
+      - ""
+      - "%playback_killcam_seconds_before_click%"
+    actions:
+      - "exyliakillcam:setting playback killcam.seconds-before"
+
+  killcam-slow-motion-seconds:
+    slot: 12
+    material: SNOWBALL
+    name: "{letters}Playback {letters_black}▸ <gradient:{primary}:{secondary_light}>Slow motion</gradient>"
+    lore:
+      - "{letters_black}Playback setting"
+      - ""
+      - "{primary}✎ Information"
+      - " {letters}The last moment before the death"
+      - " {letters}plays slowly. {highlight}0 {letters}is never."
+      - ""
+      - "{primary}✦ Status"
+      - "  {letters_black}· {info}{icon:clock} {letters}Length{letters_black}: %playback_killcam_slow_motion_seconds%"
+      - "  {letters_black}· {info}{icon:book} {letters}Default{letters_black}: %playback_killcam_slow_motion_seconds_default%"
+      - ""
+      - "%playback_killcam_slow_motion_seconds_click%"
+    actions:
+      - "exyliakillcam:setting playback killcam.slow-motion-seconds"
+
+  killcam-slow-motion-speed:
+    slot: 13
+    material: FEATHER
+    name: "{letters}Playback {letters_black}▸ <gradient:{primary}:{secondary_light}>Slow speed</gradient>"
+    lore:
+      - "{letters_black}Playback setting"
+      - ""
+      - "{primary}✎ Information"
+      - " {letters}How fast the slow motion plays:"
+      - " {letters}{highlight}0.5 {letters}is half speed."
+      - ""
+      - "{primary}✦ Status"
+      - "  {letters_black}· {info}{icon:star} {letters}Speed{letters_black}: %playback_killcam_slow_motion_speed%"
+      - "  {letters_black}· {info}{icon:book} {letters}Default{letters_black}: %playback_killcam_slow_motion_speed_default%"
+      - ""
+      - "%playback_killcam_slow_motion_speed_click%"
+    actions:
+      - "exyliakillcam:setting playback killcam.slow-motion-speed"
+
+  killcam-first-person:
+    slot: 14
+    material: ENDER_EYE
+    name: "{letters}Playback {letters_black}▸ <gradient:{primary}:{secondary_light}>First person</gradient>"
+    lore:
+      - "{letters_black}Playback setting"
+      - ""
+      - "{primary}✎ Information"
+      - " {letters}Watch through the killer's eyes."
+      - " {letters}Off shows it behind the victim."
+      - ""
+      - "{primary}✦ Status"
+      - "  {letters_black}· {info}{icon:star} {letters}State{letters_black}: %playback_killcam_first_person%"
+      - "  {letters_black}· {info}{icon:book} {letters}Default{letters_black}: %playback_killcam_first_person_default%"
+      - ""
+      - "%playback_killcam_first_person_click%"
+    actions:
+      - "exyliakillcam:setting playback killcam.first-person"
+
+  killcam-hold-seconds:
+    slot: 15
+    material: SKELETON_SKULL
+    name: "{letters}Playback {letters_black}▸ <gradient:{primary}:{secondary_light}>Hold on body</gradient>"
+    lore:
+      - "{letters_black}Playback setting"
+      - ""
+      - "{primary}✎ Information"
+      - " {letters}How long the camera stays on the"
+      - " {letters}body for the fall and kill effect."
+      - ""
+      - "{primary}✦ Status"
+      - "  {letters_black}· {info}{icon:clock} {letters}Length{letters_black}: %playback_killcam_hold_seconds%"
+      - "  {letters_black}· {info}{icon:book} {letters}Default{letters_black}: %playback_killcam_hold_seconds_default%"
+      - ""
+      - "%playback_killcam_hold_seconds_click%"
+    actions:
+      - "exyliakillcam:setting playback killcam.hold-seconds"
+
+  killcam-narrate-hits:
+    slot: 16
+    material: WRITABLE_BOOK
+    name: "{letters}Playback {letters_black}▸ <gradient:{primary}:{secondary_light}>Narrate hits</gradient>"
+    lore:
+      - "{letters_black}Playback setting"
+      - ""
+      - "{primary}✎ Information"
+      - " {letters}Writes each hit the victim took in"
+      - " {letters}their chat as the camera passes."
+      - ""
+      - "{primary}✦ Status"
+      - "  {letters_black}· {info}{icon:book} {letters}State{letters_black}: %playback_killcam_narrate_hits%"
+      - "  {letters_black}· {info}{icon:book} {letters}Default{letters_black}: %playback_killcam_narrate_hits_default%"
+      - ""
+      - "%playback_killcam_narrate_hits_click%"
+    actions:
+      - "exyliakillcam:setting playback killcam.narrate-hits"
+
+  back:
+    slot: 22
+    sound: "minecraft:item.bundle.remove_one|1.0|0.5"
+    material: 'basehead-eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMjIzZmI2NzQyOTcxNmIyMWJjNmU4ZTdkNjY5Y2VkZGY2NWIxM2UwNzkwYTVjZTU1YjJlMDc3YjgyZDE5ZTEyNCJ9fX0='
+    name: "{letters}Back {letters_black}▸ <gradient:{error}:{error_light}>Settings</gradient>"
+    lore:
+      - "{error}{icon:click} Click to go back"
+    actions:
+      - "exyliakillcam:settings_hub"

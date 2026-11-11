@@ -1,0 +1,172 @@
+# DO NOT EDIT — REGENERATED ON EVERY STARTUP.
+#
+# Which deaths get a killcam and what is recorded. Everything else is in config.yml.
+
+title: "{primary}&lНАСТРОЙКИ {letters_black}» {highlight}Смерти"
+size: 27
+type: SIMPLE
+
+open_sounds:
+  - "minecraft:block.ender_chest.open|1.0|1.4"
+click_sounds:
+  - "minecraft:block.note_block.hat|1.0|1.0"
+close_sounds:
+  - "minecraft:block.barrel.close|1.0|0.7"
+
+filler:
+  global:
+    material: GRAY_STAINED_GLASS_PANE
+    hide_tooltip: true
+
+items:
+  header:
+    slot: 4
+    material: BONE
+    name: "<gradient:{primary}:{secondary_light}>Смерти</gradient>"
+    lore:
+      - "{letters_black}Настройки: Смерти"
+      - ""
+      - "{primary}✎ Информация"
+      - " {letters}Какие смерти получают киллкам."
+
+  deaths-mobs:
+    slot: 10
+    material: ZOMBIE_HEAD
+    name: "{letters}Смерти {letters_black}▸ <gradient:{primary}:{secondary_light}>Смерти от мобов</gradient>"
+    lore:
+      - "{letters_black}Настройка: Смерти"
+      - ""
+      - "{primary}✎ Информация"
+      - " {letters}Киллкам и за смерть от моба,"
+      - " {letters}а не только от игрока."
+      - ""
+      - "{primary}✦ Статус"
+      - "  {letters_black}· {info}{icon:star} {letters}Состояние{letters_black}: %deaths_deaths_mobs%"
+      - "  {letters_black}· {info}{icon:book} {letters}По умолчанию{letters_black}: %deaths_deaths_mobs_default%"
+      - ""
+      - "%deaths_deaths_mobs_click%"
+    actions:
+      - "exyliakillcam:setting deaths deaths.mobs"
+
+  deaths-disabled-worlds:
+    slot: 11
+    material: BARRIER
+    name: "{letters}Смерти {letters_black}▸ <gradient:{primary}:{secondary_light}>Отключённые миры</gradient>"
+    lore:
+      - "{letters_black}Настройка: Смерти"
+      - ""
+      - "{primary}✎ Информация"
+      - " {letters}Миры, где ни у кого нет киллкама."
+      - ""
+      - "{primary}✦ Статус"
+      - "  {letters_black}· {info}{icon:star} {letters}Миры{letters_black}: %deaths_deaths_disabled_worlds%"
+      - "  {letters_black}· {info}{icon:book} {letters}По умолчанию{letters_black}: %deaths_deaths_disabled_worlds_default%"
+      - ""
+      - "%deaths_deaths_disabled_worlds_click%"
+    actions:
+      - "exyliakillcam:setting deaths deaths.disabled-worlds"
+
+  killcam-auto-respawn:
+    slot: 12
+    material: TOTEM_OF_UNDYING
+    name: "{letters}Смерти {letters_black}▸ <gradient:{primary}:{secondary_light}>Авто-возрождение</gradient>"
+    lore:
+      - "{letters_black}Настройка: Смерти"
+      - ""
+      - "{primary}✎ Информация"
+      - " {letters}Игроки возрождаются сами, чтобы"
+      - " {letters}киллкам шёл следом. Только авто."
+      - ""
+      - "{primary}✦ Статус"
+      - "  {letters_black}· {info}{icon:star} {letters}Состояние{letters_black}: %deaths_killcam_auto_respawn%"
+      - "  {letters_black}· {info}{icon:book} {letters}По умолчанию{letters_black}: %deaths_killcam_auto_respawn_default%"
+      - ""
+      - "%deaths_killcam_auto_respawn_click%"
+    actions:
+      - "exyliakillcam:setting deaths killcam.auto-respawn"
+
+  killcam-rewatch-minutes:
+    slot: 13
+    material: CLOCK
+    name: "{letters}Смерти {letters_black}▸ <gradient:{primary}:{secondary_light}>Окно пересмотра</gradient>"
+    lore:
+      - "{letters_black}Настройка: Смерти"
+      - ""
+      - "{primary}✎ Информация"
+      - " {letters}Как долго {highlight}/killcam {letters}ещё показывает"
+      - " {letters}последнюю смерть игрока."
+      - ""
+      - "{primary}✦ Статус"
+      - "  {letters_black}· {info}{icon:clock} {letters}Длина{letters_black}: %deaths_killcam_rewatch_minutes%"
+      - "  {letters_black}· {info}{icon:book} {letters}По умолчанию{letters_black}: %deaths_killcam_rewatch_minutes_default%"
+      - ""
+      - "%deaths_killcam_rewatch_minutes_click%"
+    actions:
+      - "exyliakillcam:setting deaths killcam.rewatch-minutes"
+
+  recording-radius:
+    slot: 14
+    material: COMPASS
+    name: "{letters}Смерти {letters_black}▸ <gradient:{primary}:{secondary_light}>Радиус записи</gradient>"
+    lore:
+      - "{letters_black}Настройка: Смерти"
+      - ""
+      - "{primary}✎ Информация"
+      - " {letters}На каком расстоянии от жертвы"
+      - " {letters}показано происходящее."
+      - ""
+      - "{primary}✦ Статус"
+      - "  {letters_black}· {info}{icon:star} {letters}Блоки{letters_black}: %deaths_recording_radius%"
+      - "  {letters_black}· {info}{icon:book} {letters}По умолчанию{letters_black}: %deaths_recording_radius_default%"
+      - ""
+      - "%deaths_recording_radius_click%"
+    actions:
+      - "exyliakillcam:setting deaths recording.radius"
+
+  recording-hide-vanished:
+    slot: 15
+    material: GLASS
+    name: "{letters}Смерти {letters_black}▸ <gradient:{primary}:{secondary_light}>Скрывать ванишеров</gradient>"
+    lore:
+      - "{letters_black}Настройка: Смерти"
+      - ""
+      - "{primary}✎ Информация"
+      - " {letters}Игроки в ванише не попадают"
+      - " {letters}ни в один киллкам."
+      - ""
+      - "{primary}✦ Статус"
+      - "  {letters_black}· {info}{icon:star} {letters}Состояние{letters_black}: %deaths_recording_hide_vanished%"
+      - "  {letters_black}· {info}{icon:book} {letters}По умолчанию{letters_black}: %deaths_recording_hide_vanished_default%"
+      - ""
+      - "%deaths_recording_hide_vanished_click%"
+    actions:
+      - "exyliakillcam:setting deaths recording.hide-vanished"
+
+  kill-effects-replay:
+    slot: 16
+    material: FIREWORK_STAR
+    name: "{letters}Смерти {letters_black}▸ <gradient:{primary}:{secondary_light}>Повтор эффекта убийства</gradient>"
+    lore:
+      - "{letters_black}Настройка: Смерти"
+      - ""
+      - "{primary}✎ Информация"
+      - " {letters}Эффект убийства повторяется"
+      - " {letters}только для зрителя."
+      - ""
+      - "{primary}✦ Статус"
+      - "  {letters_black}· {info}{icon:star} {letters}Состояние{letters_black}: %deaths_kill_effects_replay%"
+      - "  {letters_black}· {info}{icon:book} {letters}По умолчанию{letters_black}: %deaths_kill_effects_replay_default%"
+      - ""
+      - "%deaths_kill_effects_replay_click%"
+    actions:
+      - "exyliakillcam:setting deaths kill-effects.replay"
+
+  back:
+    slot: 22
+    sound: "minecraft:item.bundle.remove_one|1.0|0.5"
+    material: 'basehead-eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMjIzZmI2NzQyOTcxNmIyMWJjNmU4ZTdkNjY5Y2VkZGY2NWIxM2UwNzkwYTVjZTU1YjJlMDc3YjgyZDE5ZTEyNCJ9fX0='
+    name: "{letters}Назад {letters_black}▸ <gradient:{error}:{error_light}>Настройки</gradient>"
+    lore:
+      - "{error}{icon:click} Нажмите, чтобы вернуться"
+    actions:
+      - "exyliakillcam:settings_hub"

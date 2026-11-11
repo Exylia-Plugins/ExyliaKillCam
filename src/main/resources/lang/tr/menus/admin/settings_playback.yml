@@ -1,0 +1,173 @@
+# DO NOT EDIT — REGENERATED ON EVERY STARTUP.
+#
+# How a killcam plays. Everything else is in config.yml.
+
+title: "{primary}&lAYARLAR {letters_black}» {highlight}Oynatma"
+size: 27
+type: SIMPLE
+
+open_sounds:
+  - "minecraft:block.ender_chest.open|1.0|1.4"
+click_sounds:
+  - "minecraft:block.note_block.hat|1.0|1.0"
+close_sounds:
+  - "minecraft:block.barrel.close|1.0|0.7"
+
+filler:
+  global:
+    material: GRAY_STAINED_GLASS_PANE
+    hide_tooltip: true
+
+items:
+  header:
+    slot: 4
+    material: SPYGLASS
+    name: "<gradient:{primary}:{secondary_light}>Oynatma</gradient>"
+    lore:
+      - "{letters_black}Ayarlar: Oynatma"
+      - ""
+      - "{primary}✎ Bilgi"
+      - " {letters}Killcam ne gösterir ve nasıl."
+
+  killcam-default-mode:
+    slot: 10
+    material: COMPARATOR
+    name: "{letters}Oynatma {letters_black}▸ <gradient:{primary}:{secondary_light}>Varsayılan mod</gradient>"
+    lore:
+      - "{letters_black}Ayar: Oynatma"
+      - ""
+      - "{primary}✎ Bilgi"
+      - " {letters}Oyuncular {highlight}/killcam mode {letters}ile"
+      - " {letters}seçene kadar ne alır."
+      - ""
+      - "{primary}✦ Durum"
+      - "  {letters_black}· {info}{icon:star} {letters}Mod{letters_black}: %playback_killcam_default_mode%"
+      - "  {letters_black}· {info}{icon:book} {letters}Varsayılan{letters_black}: %playback_killcam_default_mode_default%"
+      - ""
+      - "%playback_killcam_default_mode_click%"
+    actions:
+      - "exyliakillcam:setting playback killcam.default-mode"
+
+  killcam-seconds-before:
+    slot: 11
+    material: CLOCK
+    name: "{letters}Oynatma {letters_black}▸ <gradient:{primary}:{secondary_light}>Öncesi (sn)</gradient>"
+    lore:
+      - "{letters_black}Ayar: Oynatma"
+      - ""
+      - "{primary}✎ Bilgi"
+      - " {letters}Ölümden önce kavganın ne kadarı"
+      - " {letters}gösterilir."
+      - ""
+      - "{primary}✦ Durum"
+      - "  {letters_black}· {info}{icon:clock} {letters}Süre{letters_black}: %playback_killcam_seconds_before%"
+      - "  {letters_black}· {info}{icon:book} {letters}Varsayılan{letters_black}: %playback_killcam_seconds_before_default%"
+      - ""
+      - "%playback_killcam_seconds_before_click%"
+    actions:
+      - "exyliakillcam:setting playback killcam.seconds-before"
+
+  killcam-slow-motion-seconds:
+    slot: 12
+    material: SNOWBALL
+    name: "{letters}Oynatma {letters_black}▸ <gradient:{primary}:{secondary_light}>Ağır çekim</gradient>"
+    lore:
+      - "{letters_black}Ayar: Oynatma"
+      - ""
+      - "{primary}✎ Bilgi"
+      - " {letters}Ölümden önceki son an ağır çekimde"
+      - " {letters}oynar. {highlight}0 {letters}= hiçbir zaman."
+      - ""
+      - "{primary}✦ Durum"
+      - "  {letters_black}· {info}{icon:clock} {letters}Süre{letters_black}: %playback_killcam_slow_motion_seconds%"
+      - "  {letters_black}· {info}{icon:book} {letters}Varsayılan{letters_black}: %playback_killcam_slow_motion_seconds_default%"
+      - ""
+      - "%playback_killcam_slow_motion_seconds_click%"
+    actions:
+      - "exyliakillcam:setting playback killcam.slow-motion-seconds"
+
+  killcam-slow-motion-speed:
+    slot: 13
+    material: FEATHER
+    name: "{letters}Oynatma {letters_black}▸ <gradient:{primary}:{secondary_light}>Ağır çekim hızı</gradient>"
+    lore:
+      - "{letters_black}Ayar: Oynatma"
+      - ""
+      - "{primary}✎ Bilgi"
+      - " {letters}Ağır çekimin hızı:"
+      - " {letters}{highlight}0.5 {letters}= yarı hız."
+      - ""
+      - "{primary}✦ Durum"
+      - "  {letters_black}· {info}{icon:star} {letters}Hız{letters_black}: %playback_killcam_slow_motion_speed%"
+      - "  {letters_black}· {info}{icon:book} {letters}Varsayılan{letters_black}: %playback_killcam_slow_motion_speed_default%"
+      - ""
+      - "%playback_killcam_slow_motion_speed_click%"
+    actions:
+      - "exyliakillcam:setting playback killcam.slow-motion-speed"
+
+  killcam-first-person:
+    slot: 14
+    material: ENDER_EYE
+    name: "{letters}Oynatma {letters_black}▸ <gradient:{primary}:{secondary_light}>Birinci kişi</gradient>"
+    lore:
+      - "{letters_black}Ayar: Oynatma"
+      - ""
+      - "{primary}✎ Bilgi"
+      - " {letters}Katilin gözünden izler. Kapalıysa"
+      - " {letters}kurbanın arkasından."
+      - ""
+      - "{primary}✦ Durum"
+      - "  {letters_black}· {info}{icon:star} {letters}Durum{letters_black}: %playback_killcam_first_person%"
+      - "  {letters_black}· {info}{icon:book} {letters}Varsayılan{letters_black}: %playback_killcam_first_person_default%"
+      - ""
+      - "%playback_killcam_first_person_click%"
+    actions:
+      - "exyliakillcam:setting playback killcam.first-person"
+
+  killcam-hold-seconds:
+    slot: 15
+    material: SKELETON_SKULL
+    name: "{letters}Oynatma {letters_black}▸ <gradient:{primary}:{secondary_light}>Cesette bekleme</gradient>"
+    lore:
+      - "{letters_black}Ayar: Oynatma"
+      - ""
+      - "{primary}✎ Bilgi"
+      - " {letters}Kamera düşüş ve efekt için cesette"
+      - " {letters}ne kadar kalır."
+      - ""
+      - "{primary}✦ Durum"
+      - "  {letters_black}· {info}{icon:clock} {letters}Süre{letters_black}: %playback_killcam_hold_seconds%"
+      - "  {letters_black}· {info}{icon:book} {letters}Varsayılan{letters_black}: %playback_killcam_hold_seconds_default%"
+      - ""
+      - "%playback_killcam_hold_seconds_click%"
+    actions:
+      - "exyliakillcam:setting playback killcam.hold-seconds"
+
+  killcam-narrate-hits:
+    slot: 16
+    material: WRITABLE_BOOK
+    name: "{letters}Oynatma {letters_black}▸ <gradient:{primary}:{secondary_light}>Vuruşları anlat</gradient>"
+    lore:
+      - "{letters_black}Ayar: Oynatma"
+      - ""
+      - "{primary}✎ Bilgi"
+      - " {letters}Kurbanın aldığı her vuruşu killcam"
+      - " {letters}geçerken sohbetine yazar."
+      - ""
+      - "{primary}✦ Durum"
+      - "  {letters_black}· {info}{icon:book} {letters}Durum{letters_black}: %playback_killcam_narrate_hits%"
+      - "  {letters_black}· {info}{icon:book} {letters}Varsayılan{letters_black}: %playback_killcam_narrate_hits_default%"
+      - ""
+      - "%playback_killcam_narrate_hits_click%"
+    actions:
+      - "exyliakillcam:setting playback killcam.narrate-hits"
+
+  back:
+    slot: 22
+    sound: "minecraft:item.bundle.remove_one|1.0|0.5"
+    material: 'basehead-eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMjIzZmI2NzQyOTcxNmIyMWJjNmU4ZTdkNjY5Y2VkZGY2NWIxM2UwNzkwYTVjZTU1YjJlMDc3YjgyZDE5ZTEyNCJ9fX0='
+    name: "{letters}Geri {letters_black}▸ <gradient:{error}:{error_light}>Ayarlar</gradient>"
+    lore:
+      - "{error}{icon:click} Geri dönmek için tıkla"
+    actions:
+      - "exyliakillcam:settings_hub"

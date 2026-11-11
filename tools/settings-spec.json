@@ -1,0 +1,51 @@
+{
+ "namespace": "exyliakillcam",
+ "menu": "menus/admin/settings",
+ "title": "KILLCAM",
+ "back": {"label": "Killcam", "action": "exyliakillcam:close"},
+ "hub": {"about": ["The settings worth changing in", "game, grouped by theme. The", "rest stays in the files."]},
+ "pages": [
+  {"id": "playback", "title": "Playback", "context": "Playback", "icon": "SPYGLASS",
+   "comment": ["How a killcam plays. Everything else is in config.yml."],
+   "about": ["What a killcam shows and how."],
+   "hub": {"about": ["Length, speed and viewpoint."],
+           "stats": [["clock", "Before death", "killcam.seconds-before"], ["clock", "Slow motion", "killcam.slow-motion-seconds"]]},
+   "cards": [
+    ["killcam.default-mode", "Default mode", "COMPARATOR", "star", "Mode",
+     ["What players get until they", "pick with {highlight}/killcam mode{letters}."]],
+    ["killcam.seconds-before", "Seconds before", "CLOCK", "clock", "Length",
+     ["How much of the fight is shown", "before the death."]],
+    ["killcam.slow-motion-seconds", "Slow motion", "SNOWBALL", "clock", "Length",
+     ["The last moment before the death", "plays slowly. {highlight}0 {letters}is never."]],
+    ["killcam.slow-motion-speed", "Slow speed", "FEATHER", "star", "Speed",
+     ["How fast the slow motion plays:", "{highlight}0.5 {letters}is half speed."]],
+    ["killcam.first-person", "First person", "ENDER_EYE", "star", "State",
+     ["Watch through the killer's eyes.", "Off shows it behind the victim."]],
+    ["killcam.hold-seconds", "Hold on body", "SKELETON_SKULL", "clock", "Length",
+     ["How long the camera stays on the", "body for the fall and kill effect."]],
+    ["killcam.narrate-hits", "Narrate hits", "WRITABLE_BOOK", "book", "State",
+     ["Writes each hit the victim took in", "their chat as the camera passes."]]
+   ]},
+  {"id": "deaths", "title": "Deaths", "context": "Deaths", "icon": "BONE",
+   "comment": ["Which deaths get a killcam and what is recorded. Everything else is in config.yml."],
+   "about": ["Which deaths get a killcam."],
+   "hub": {"about": ["Mobs, worlds and how long a", "death stays watchable."],
+           "stats": [["clock", "Rewatch", "killcam.rewatch-minutes"], ["star", "Mob deaths", "deaths.mobs"]]},
+   "cards": [
+    ["deaths.mobs", "Mob deaths", "ZOMBIE_HEAD", "star", "State",
+     ["Gives a death to a mob a killcam", "too, not only a death to a player."]],
+    ["deaths.disabled-worlds", "Disabled worlds", "BARRIER", "star", "Worlds",
+     ["Worlds where nobody gets a killcam."]],
+    ["killcam.auto-respawn", "Auto respawn", "TOTEM_OF_UNDYING", "star", "State",
+     ["Respawns players by themselves so", "the killcam follows. Auto only."]],
+    ["killcam.rewatch-minutes", "Rewatch window", "CLOCK", "clock", "Length",
+     ["How long {highlight}/killcam {letters}can still show", "a player's last death."]],
+    ["recording.radius", "Recording radius", "COMPASS", "star", "Blocks",
+     ["How far around the victim the", "killcam shows what happened."]],
+    ["recording.hide-vanished", "Hide vanished", "GLASS", "star", "State",
+     ["Keeps players in vanish out of", "every killcam."]],
+    ["kill-effects.replay", "Replay kill effect", "FIREWORK_STAR", "star", "State",
+     ["Plays the killer's kill effect", "again, for the viewer alone."]]
+   ]}
+ ]
+}

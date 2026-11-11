@@ -1,0 +1,71 @@
+# DO NOT EDIT — REGENERATED ON EVERY STARTUP.
+#
+# Settings an admin tunes, one card per module. Everything else stays in the files.
+
+title: "{primary}&lKILLCAM {letters_black}» {highlight}Настройки"
+size: 27
+type: SIMPLE
+
+open_sounds:
+  - "minecraft:block.ender_chest.open|1.0|1.4"
+click_sounds:
+  - "minecraft:block.note_block.hat|1.0|1.0"
+close_sounds:
+  - "minecraft:block.barrel.close|1.0|0.7"
+
+filler:
+  global:
+    material: GRAY_STAINED_GLASS_PANE
+    hide_tooltip: true
+
+items:
+  header:
+    slot: 4
+    material: COMPARATOR
+    name: "<gradient:{primary}:{secondary_light}>Настройки</gradient>"
+    lore:
+      - "{letters_black}Настройки: Killcam"
+      - ""
+      - "{primary}✎ Информация"
+      - " {letters}Настройки, которые стоит менять в"
+      - " {letters}игре, по темам. Остальное"
+      - " {letters}остаётся в файлах."
+
+  playback:
+    slot: 12
+    material: SPYGLASS
+    name: "{letters}Настройки {letters_black}▸ <gradient:{primary}:{secondary_light}>Просмотр</gradient>"
+    lore:
+      - "{letters_black}Страница настроек"
+      - ""
+      - "{primary}✎ Информация"
+      - " {letters}Длина, скорость и вид."
+      - ""
+      - "{primary}✦ Статус"
+      - "  {letters_black}· {info}{icon:clock} {letters}До смерти{letters_black}: %playback_killcam_seconds_before%"
+      - "  {letters_black}· {info}{icon:clock} {letters}Замедление{letters_black}: %playback_killcam_slow_motion_seconds%"
+      - ""
+      - "{primary}{icon:click} Нажмите, чтобы открыть"
+      - "{letters_black}Каждая настройка с описанием."
+    actions:
+      - "exyliakillcam:settings_page playback"
+
+  deaths:
+    slot: 14
+    material: BONE
+    name: "{letters}Настройки {letters_black}▸ <gradient:{primary}:{secondary_light}>Смерти</gradient>"
+    lore:
+      - "{letters_black}Страница настроек"
+      - ""
+      - "{primary}✎ Информация"
+      - " {letters}Мобы, миры и как долго можно"
+      - " {letters}пересмотреть смерть."
+      - ""
+      - "{primary}✦ Статус"
+      - "  {letters_black}· {info}{icon:clock} {letters}Пересмотр{letters_black}: %deaths_killcam_rewatch_minutes%"
+      - "  {letters_black}· {info}{icon:star} {letters}Смерти от мобов{letters_black}: %deaths_deaths_mobs%"
+      - ""
+      - "{primary}{icon:click} Нажмите, чтобы открыть"
+      - "{letters_black}Каждая настройка с описанием."
+    actions:
+      - "exyliakillcam:settings_page deaths"

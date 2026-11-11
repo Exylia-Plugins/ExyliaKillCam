@@ -1,0 +1,71 @@
+# DO NOT EDIT — REGENERATED ON EVERY STARTUP.
+#
+# Settings an admin tunes, one card per module. Everything else stays in the files.
+
+title: "{primary}&lKILLCAM {letters_black}» {highlight}Ayarlar"
+size: 27
+type: SIMPLE
+
+open_sounds:
+  - "minecraft:block.ender_chest.open|1.0|1.4"
+click_sounds:
+  - "minecraft:block.note_block.hat|1.0|1.0"
+close_sounds:
+  - "minecraft:block.barrel.close|1.0|0.7"
+
+filler:
+  global:
+    material: GRAY_STAINED_GLASS_PANE
+    hide_tooltip: true
+
+items:
+  header:
+    slot: 4
+    material: COMPARATOR
+    name: "<gradient:{primary}:{secondary_light}>Ayarlar</gradient>"
+    lore:
+      - "{letters_black}Ayarlar: Killcam"
+      - ""
+      - "{primary}✎ Bilgi"
+      - " {letters}Oyunda değiştirmeye değen ayarlar,"
+      - " {letters}temaya göre. Kalanı dosyalarda"
+      - " {letters}kalır."
+
+  playback:
+    slot: 12
+    material: SPYGLASS
+    name: "{letters}Ayarlar {letters_black}▸ <gradient:{primary}:{secondary_light}>Oynatma</gradient>"
+    lore:
+      - "{letters_black}Ayar sayfası"
+      - ""
+      - "{primary}✎ Bilgi"
+      - " {letters}Süre, hız ve bakış açısı."
+      - ""
+      - "{primary}✦ Durum"
+      - "  {letters_black}· {info}{icon:clock} {letters}Ölümden önce{letters_black}: %playback_killcam_seconds_before%"
+      - "  {letters_black}· {info}{icon:clock} {letters}Ağır çekim{letters_black}: %playback_killcam_slow_motion_seconds%"
+      - ""
+      - "{primary}{icon:click} Açmak için tıkla"
+      - "{letters_black}Her ayar, açıklamasıyla."
+    actions:
+      - "exyliakillcam:settings_page playback"
+
+  deaths:
+    slot: 14
+    material: BONE
+    name: "{letters}Ayarlar {letters_black}▸ <gradient:{primary}:{secondary_light}>Ölümler</gradient>"
+    lore:
+      - "{letters_black}Ayar sayfası"
+      - ""
+      - "{primary}✎ Bilgi"
+      - " {letters}Moblar, dünyalar ve bir ölümün ne"
+      - " {letters}kadar izlenebileceği."
+      - ""
+      - "{primary}✦ Durum"
+      - "  {letters_black}· {info}{icon:clock} {letters}Tekrar izleme{letters_black}: %deaths_killcam_rewatch_minutes%"
+      - "  {letters_black}· {info}{icon:star} {letters}Mob ölümleri{letters_black}: %deaths_deaths_mobs%"
+      - ""
+      - "{primary}{icon:click} Açmak için tıkla"
+      - "{letters_black}Her ayar, açıklamasıyla."
+    actions:
+      - "exyliakillcam:settings_page deaths"

@@ -6,6 +6,7 @@ import net.exylia.exyliaKillCam.config.KillCamSettings;
 import net.exylia.exyliaKillCam.killcam.KillCamHotbar;
 import net.exylia.exyliaKillCam.killcam.KillCamListener;
 import net.exylia.exyliaKillCam.killcam.KillCams;
+import net.exylia.exyliaKillCam.menu.SettingsMenus;
 import net.exylia.lib.action.ActionResult;
 import net.exylia.lib.action.Actions;
 import net.exylia.lib.config.Configs;
@@ -49,6 +50,7 @@ public final class ExyliaKillCam {
     private Reloads reloads;
     private KillCamHotbar hotbar;
     private KillCams killCams;
+    private SettingsMenus settings;
 
     /** The running instance; only valid between {@link #start} and {@link #shutdown}. */
     public static ExyliaKillCam get() {
@@ -72,6 +74,9 @@ public final class ExyliaKillCam {
         killCams.open();
         tasks.runTimer(1200L, 1200L, killCams::sweep);
 
+        settings = new SettingsMenus(this);
+        settings.register(Actions.of(plugin, NAMESPACE));
+        settings.load();
         Actions.of(plugin, NAMESPACE).registerSync("skip", (ctx, args) -> {
             killCams.skip(ctx.player());
             return ActionResult.success();
@@ -91,7 +96,8 @@ public final class ExyliaKillCam {
                     registerSetting();
                     killCams.reload();
                 })
-                .stepAlsoOnLibraryReload("hotbar", hotbar::load);
+                .stepAlsoOnLibraryReload("hotbar", hotbar::load)
+                .stepAlsoOnLibraryReload("menus", settings::reload);
 
         debug.motd();
     }
@@ -147,5 +153,6 @@ public final class ExyliaKillCam {
     public PluginTeleports getTeleports() { return teleports; }
     public Debug getDebug() { return debug; }
     public KillCamHotbar getHotbar() { return hotbar; }
+    public SettingsMenus getSettings() { return settings; }
     public KillCams getKillCams() { return killCams; }
 }
