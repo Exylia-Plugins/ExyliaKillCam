@@ -1,0 +1,27 @@
+# Die Schaltfläche in der Hotbar, während man eine Killcam ansieht.
+#
+# Wird nur auf dem Client gezeichnet und nie ins Inventar gelegt: Die eigenen Items
+# des Zuschauers bleiben darunter und kommen zurück, wenn die Killcam endet. Slots 0-8 sind die Hotbar.
+
+menu-version: 1
+
+lock: FULL
+pickup: false
+hide_rest: true
+
+items:
+
+  skip:
+    slot: 4
+    material: BARRIER
+    name: "{letters}Killcam {letters_black}▸ <gradient:{error}:{error_light}>Überspringen</gradient>"
+    lore:
+      - "{letters_black}Killcam-Aktion"
+      - ""
+      - "{error}✎ Information"
+      - " {letters}Verlasse die Killcam und kehre"
+      - " {letters}dorthin zurück, wo du warst."
+      - ""
+      - "{error}» Klicke zum Überspringen"
+    actions:
+      - 'exyliakillcam:skip'
