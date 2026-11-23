@@ -31,6 +31,22 @@ public record KillCamMessages(
         String hit,
 
         @Comment("")
+        @Comment("The title slammed over the killing blow: the first that fits, in this order. REVENGE: the")
+        @Comment("victim had killed the killer before. CLUTCH: the killer had a heart or less left, %health%.")
+        @Comment("LONG SHOT: a projectile from 20 blocks or more, %distance%. ONE SHOT: a single hit did it.")
+        @Comment("STREAK: the killer's %streak% kills in a row, from 3. ELIMINATED: anything else.")
+        String titleRevenge,
+        String titleClutch,
+        String titleLongShot,
+        String titleOneShot,
+        String titleStreak,
+        String titleEliminated,
+        @Comment("Written at the foot of the last shot. %killer%, %weapon%.")
+        String line,
+        @Comment("Over the shot that follows a projectile: how far it has flown, %distance% in blocks.")
+        String caption,
+
+        @Comment("")
         @Comment("After it. %killer%, %health% the hearts they had left, %weapon% what they held,")
         @Comment("%distance% how far apart you were, in blocks.")
         List<String> summary,
@@ -66,6 +82,14 @@ public record KillCamMessages(
                 "{error}▌",
                 "{letters_black}▌",
                 "%prefix% {highlight}%player% {letters}hit you for {error}%damage%❤ {letters_black}(hit #%number%)",
+                "{accent}&lREVENGE",
+                "{warning}&lCLUTCH {letters_black}· {error}%health%❤",
+                "{info}&lLONG SHOT {letters_black}· {letters}%distance% blocks",
+                "{highlight}&lONE SHOT",
+                "{highlight}&lSTREAK {letters_black}· {letters}×%streak%",
+                "{error}&lELIMINATED",
+                "{letters}%killer% {letters_black}· {info}%weapon%",
+                "{letters}%distance% {letters_black}blocks",
                 List.of("",
                         "%prefix% {letters}Killed by {highlight}%killer%",
                         " {letters_black}▎ {letters}Health left {letters_black}» {error}%health% ❤",

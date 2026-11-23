@@ -8,6 +8,7 @@ import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -57,7 +58,10 @@ public final class KillCamListener implements Listener {
         if (moment == null || event.isCancelled() && !moment.held()) return;
         Entity killer = killer(event);
         if (killer == null) killer = ffaKiller;
-        if (killer != null && !killer.equals(victim)) killCams.died(victim, killer, moment.where(), moment.held());
+        Entity direct = event.getDamageSource().getDirectEntity();
+        UUID projectile = direct instanceof Projectile thrown ? thrown.getUniqueId() : null;
+        if (killer != null && !killer.equals(victim)) killCams.died(victim, killer, moment.where(), moment.held(), projectile);
+        killCams.tally(victim, killer);
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)

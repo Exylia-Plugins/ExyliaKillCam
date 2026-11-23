@@ -1,7 +1,9 @@
 package net.exylia.exyliaKillCam.killcam;
 
+import net.exylia.exyliaKillCam.config.KillCamSettings;
 import net.exylia.lib.replay.Replay;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -22,10 +24,16 @@ import java.util.concurrent.CompletableFuture;
  * @param distance     how far apart the two were, in blocks
  * @param at           when, in milliseconds
  * @param keepMillis   how long it stays watchable with {@code /killcam}, read from the victim's rank when they died
+ * @param projectile   the arrow, trident or other projectile that landed the blow, as the recording knows it
+ * @param revenge      whether the victim had killed the killer last time the killer died
+ * @param streak       the killer's kills in a row, this one included
+ * @param style        how the killcam is filmed: the server's, with the killer's own over it
  * @param recording    the recording, written out; completed once the seconds after the death are in it
  */
 public record Death(@NotNull UUID victim, @NotNull UUID killer, @NotNull String killerName, double killerHealth,
-                    @NotNull String weapon, double distance, long at, long keepMillis, @NotNull CompletableFuture<byte[]> recording) {
+                    @NotNull String weapon, double distance, long at, long keepMillis, @Nullable UUID projectile,
+                    boolean revenge, int streak, @NotNull KillCamSettings.Style style,
+                    @NotNull CompletableFuture<byte[]> recording) {
 
     /** The recording, read back to be watched. */
     public @NotNull CompletableFuture<Replay> replay() {

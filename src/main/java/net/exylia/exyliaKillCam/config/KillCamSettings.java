@@ -6,7 +6,11 @@ import net.exylia.lib.config.Languages;
 import net.exylia.lib.config.Menu;
 import net.exylia.lib.config.Time;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 /**
  * Settings stored in {@code config.yml}.
@@ -31,10 +35,25 @@ public record KillCamSettings(
 
         @Comment("")
         @Comment("ExyliaKillEffect, when it is installed.")
-        KillEffects killEffects) {
+        KillEffects killEffects,
+
+        @Comment("")
+        @Comment("How a killcam is filmed. With ExyliaKillEffect installed, the killcam style the killer has")
+        @Comment("equipped overrides any of these values; without it, every killcam is filmed this way.")
+        Style style) {
 
     public KillCamSettings() {
-        this(Languages.DEFAULT, new Killcam(), new Deaths(), new Recording(), new KillEffects());
+        this(Languages.DEFAULT, new Killcam(), new Deaths(), new Recording(), new KillEffects(), new Style());
+    }
+
+    /** The last shot of a killcam, around the body. */
+    public enum Finale {
+        /** Circles the body. */
+        ORBIT,
+        /** Pulls up and away from it. */
+        RISE,
+        /** Stays where the killing blow was seen from. */
+        HOLD
     }
 
     /** What a player gets after dying, until they pick otherwise with /killcam mode. */
@@ -123,6 +142,100 @@ public record KillCamSettings(
 
         public KillEffects() {
             this(true);
+        }
+    }
+
+    /** The {@code style} section. */
+    public record Style(
+            @Comment("Palette colour the view is tinted with while the last moment slows down, written without")
+            @Comment("braces (primary, error, info...), and how strong it is, 0 to 1. 0 = no tint.")
+            String tint,
+            @Menu.Range(min = 0, max = 1, step = 0.05) double tintOpacity,
+
+            @Comment("Palette colour the view flashes as the frozen blow ends, and how strong. 0 = no flash.")
+            String flash,
+            @Menu.Range(min = 0, max = 1, step = 0.05) double flashOpacity,
+
+            @Comment("Whether the killing blow freezes on black with only the killer and the victim outlined.")
+            boolean impactFrame,
+
+            @Comment("How long the killing blow stays frozen, in milliseconds. 0 = no freeze.")
+            @Menu.Range(min = 0, max = 2000, step = 50) int impactMillis,
+
+            @Comment("How hard the camera shakes while the blow is frozen, in blocks. 0 = still.")
+            @Menu.Range(min = 0, max = 0.5, step = 0.01) double shake,
+
+            @Comment("Whether a kill by arrow, trident or any other projectile follows it in flight.")
+            boolean projectileCam,
+
+            @Comment("The last shot, around the body: ORBIT circles it, RISE pulls up and away, HOLD stays still.")
+            Finale finale,
+
+            @Comment("Whether black bars frame the view from the slow motion on.")
+            boolean letterbox,
+
+            @Comment("How fast the line with the killer and the weapon is written, in characters a second.")
+            @Comment("0 = all at once.")
+            @Menu.Range(min = 0, max = 200) int typewriter,
+
+            @Comment("The sounds of the killing blow and of the title landing over it, as name|volume|pitch.")
+            @Comment("Played to the viewer alone. Empty = silent.")
+            String impactSound,
+            String titleSound) {
+
+        public Style() {
+            this("primary", 0.18, "letters", 0.8, true, 400, 0.12, true, Finale.ORBIT, true, 40,
+                    "block.note_block.basedrum|0.8|0.6", "block.note_block.bell|0.5|1.2");
+        }
+
+        /**
+         * This style with another's values over it: the killer's equipped style,
+         * keyed as in this section ({@code tint-opacity}, {@code impact-frame}).
+         * Unknown keys and values of the wrong kind keep this style's.
+         */
+        public @NotNull Style over(@NotNull Map<String, ?> values) {
+            if (values.isEmpty()) return this;
+            return new Style(text(values, "tint", tint), number(values, "tint-opacity", tintOpacity),
+                    text(values, "flash", flash), number(values, "flash-opacity", flashOpacity),
+                    flag(values, "impact-frame", impactFrame), (int) number(values, "impact-millis", impactMillis),
+                    number(values, "shake", shake), flag(values, "projectile-cam", projectileCam),
+                    finale(values.get("finale"), finale), flag(values, "letterbox", letterbox),
+                    (int) number(values, "typewriter", typewriter),
+                    text(values, "impact-sound", impactSound), text(values, "title-sound", titleSound));
+        }
+
+        private static String text(Map<String, ?> values, String key, String fallback) {
+            Object value = values.get(key);
+            return value == null ? fallback : String.valueOf(value);
+        }
+
+        private static double number(Map<String, ?> values, String key, double fallback) {
+            Object value = values.get(key);
+            if (value instanceof Number number) return number.doubleValue();
+            if (value instanceof String text) {
+                try {
+                    return Double.parseDouble(text.trim());
+                } catch (NumberFormatException wrong) {
+                    return fallback;
+                }
+            }
+            return fallback;
+        }
+
+        private static boolean flag(Map<String, ?> values, String key, boolean fallback) {
+            Object value = values.get(key);
+            if (value instanceof Boolean flag) return flag;
+            if ("true".equals(value) || "false".equals(value)) return Boolean.parseBoolean((String) value);
+            return fallback;
+        }
+
+        private static Finale finale(Object value, Finale fallback) {
+            if (value == null) return fallback;
+            try {
+                return Finale.valueOf(String.valueOf(value).trim().toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException unknown) {
+                return fallback;
+            }
         }
     }
 

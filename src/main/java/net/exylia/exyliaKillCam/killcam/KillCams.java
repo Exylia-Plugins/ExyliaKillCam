@@ -30,7 +30,6 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -55,10 +54,13 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * <h2>The shot</h2>
  * The clip starts a few seconds before the death and is watched through the
- * killer's eyes. The last moment slows down; on the death the camera cuts to a
- * few blocks off the body, on the killer's side, and holds there while it falls
- * and the killer's kill effect plays again for the viewer alone. Then the viewer
- * is put back exactly as they were, and told who killed them and how.
+ * killer's eyes. Then the {@link Director} takes the camera: a close-up that
+ * slows into the killing blow, or follows the arrow that lands it, the blow
+ * frozen with a title over it, and a last shot around the body while the
+ * killer's kill effect plays again for the viewer alone. How it is filmed is the
+ * server's style, with the killer's own over it when ExyliaKillEffect gives them
+ * one. Then the viewer is put back exactly as they were, and told who killed
+ * them and how.
  *
  * <h2>Other plugins</h2>
  * A death another plugin is in charge of — the player is held by a duel, an
@@ -77,9 +79,6 @@ public final class KillCams {
     /** A kill effect belongs to the death it played on when it is this close to it. */
     private static final long EFFECT_MILLIS = 15_000L;
 
-    /** How far from the body the camera stands once it cuts, in blocks. */
-    private static final double SHOT_DISTANCE = 3.5;
-
     private static final String SETTING = "mode";
 
     private final ExyliaKillCam core;
@@ -90,6 +89,10 @@ public final class KillCams {
     private final Set<UUID> waiting = ConcurrentHashMap.newKeySet();
     private final Map<UUID, Effect> effects = new ConcurrentHashMap<>();
     private final Map<UUID, Watch> watching = new ConcurrentHashMap<>();
+    /** Kills in a row, until the player dies. */
+    private final Map<UUID, Integer> streaks = new ConcurrentHashMap<>();
+    /** Who killed each player last, for a revenge. */
+    private final Map<UUID, UUID> lastKilledBy = new ConcurrentHashMap<>();
     private volatile ReplayBlackBox box;
 
     public KillCams(@NotNull ExyliaKillCam core) {
@@ -149,10 +152,12 @@ public final class KillCams {
      * box, and the respawn, or the plugin holding them letting go, decides what
      * happens next.
      *
-     * @param where where they died
-     * @param held  whether another plugin held them when the death began
+     * @param where      where they died
+     * @param held       whether another plugin held them when the death began
+     * @param projectile the projectile that landed the blow, if one did
      */
-    public void died(@NotNull Player victim, @NotNull Entity killer, @NotNull Location where, boolean held) {
+    public void died(@NotNull Player victim, @NotNull Entity killer, @NotNull Location where, boolean held,
+                     @Nullable UUID projectile) {
         ReplayBlackBox recording = box;
         if (recording == null || !victim.hasPermission(Permissions.USE)) return;
         KillCamSettings settings = KillCamSettings.get();
@@ -163,6 +168,8 @@ public final class KillCams {
         int before = Math.max(1, settings.killcam().secondsBefore());
         Death death = new Death(victim.getUniqueId(), killer.getUniqueId(), nameOf(killer), healthOf(killer),
                 weaponOf(killer), distance(where, killer.getLocation()), System.currentTimeMillis(), Permissions.rewatchMillis(victim),
+                projectile, victim.getUniqueId().equals(lastKilledBy.get(killer.getUniqueId())),
+                streaks.getOrDefault(killer.getUniqueId(), 0) + 1, styleOf(killer, settings.style()),
                 recording.capture(victim.getUniqueId(), before + 1, AFTER_SECONDS, false).thenApply(Replay::toBytes));
         // Nobody of them in the box (a vanished player, a server that just started): no killcam, and no noise.
         death.recording().exceptionally(nothing -> null);
@@ -183,6 +190,36 @@ public final class KillCams {
                 if (victim.isDead()) victim.spigot().respawn();
             });
         }
+    }
+
+    /** The killer's style over the server's, when ExyliaKillEffect gives them one. */
+    private KillCamSettings.Style styleOf(Entity killer, KillCamSettings.Style server) {
+        if (!(killer instanceof Player)) return server;
+        KillEffectService service = Bukkit.getServicesManager().load(KillEffectService.class);
+        if (service == null) return server;
+        try {
+            return service.killCamStyle(killer.getUniqueId()).map(own -> server.over(own.settings())).orElse(server);
+        } catch (AbstractMethodError | NoSuchMethodError older) {
+            // ExyliaKillEffect built against an API before 3.8.0: no styles there.
+            return server;
+        }
+    }
+
+    /**
+     * Counts a death for the streaks and revenges: the victim's streak ends, and
+     * a player who killed them adds one and becomes who they can get back at.
+     */
+    public void tally(@NotNull Player victim, @Nullable Entity killer) {
+        UUID id = victim.getUniqueId();
+        streaks.remove(id);
+        if (!(killer instanceof Player player) || player.equals(victim)) {
+            lastKilledBy.remove(id);
+            return;
+        }
+        streaks.merge(player.getUniqueId(), 1, Integer::sum);
+        lastKilledBy.put(id, player.getUniqueId());
+        // Got back at: a second kill on the same player is no revenge.
+        lastKilledBy.remove(player.getUniqueId(), id);
     }
 
     /** They are back: the killcam starts, is offered, or nothing, as they chose. */
@@ -230,6 +267,9 @@ public final class KillCams {
         unseen.remove(id);
         waiting.remove(id);
         effects.remove(id);
+        streaks.remove(id);
+        lastKilledBy.remove(id);
+        lastKilledBy.values().removeIf(id::equals);
         skip(player);
     }
 
@@ -319,6 +359,7 @@ public final class KillCams {
 
         KillCamMessages lines = KillCamMessages.get();
         Values names = Values.of().putText("killer", death.killerName());
+        watch.director = director(viewer, watch, open, replay, lines);
         viewer.showTitle(Title.title(core.getMessages().text(lines.title(), names).build(),
                 core.getMessages().text(lines.subtitle(), names).build(),
                 Title.Times.times(Duration.ofMillis(200), Duration.ofMillis(1500), Duration.ofMillis(400))));
@@ -334,7 +375,51 @@ public final class KillCams {
         if (settings.narrateHits()) {
             open.onMark(mark -> core.getTasks().runAtEntity(viewer, () -> narrate(viewer, replay, death, mark)));
         }
-        watch.task = core.getTasks().runAtEntityTimer(viewer, 1L, 1L, () -> step(viewer, watch));
+        watch.task = core.getTasks().runAtEntityTimer(viewer, 1L, 1L, () -> step(watch));
+    }
+
+    /** The camera from the close-up on, with the title this kill earned and the killer's line. */
+    private Director director(Player viewer, Watch watch, ReplayViewer open, Replay replay, KillCamMessages lines) {
+        Death death = watch.death;
+        Director.Feat feat = Director.Feat.of(death.revenge(), death.killerHealth(), death.projectile() != null,
+                death.distance(), oneHit(replay, death), death.streak());
+        String title = switch (feat) {
+            case REVENGE -> lines.titleRevenge();
+            case CLUTCH -> lines.titleClutch();
+            case LONG_SHOT -> lines.titleLongShot();
+            case ONE_SHOT -> lines.titleOneShot();
+            case STREAK -> lines.titleStreak();
+            case ELIMINATED -> lines.titleEliminated();
+        };
+        Values figures = Values.of()
+                .putText("killer", death.killerName())
+                .putText("weapon", death.weapon())
+                .put("health", hearts(death.killerHealth() * 2))
+                .put("distance", String.format(Locale.ROOT, "%.0f", death.distance()))
+                .put("streak", String.valueOf(death.streak()));
+        KillCamSettings.Style style = death.style();
+        return new Director(viewer, open, death, watch.timeline, KillCamSettings.get().killcam(),
+                core.getMessages().text(title, figures).build(),
+                core.getMessages().text(lines.line(), figures).build(),
+                blocks -> core.getMessages().text(lines.caption(), Values.of().put("distance", String.valueOf(blocks))).build(),
+                () -> core.getTasks().runAtEntityLater(viewer, 3L, () -> Director.sound(viewer, style.titleSound())),
+                () -> {
+                    Location body = open.playback().locationOf(death.victim());
+                    if (body != null) core.getTasks().runAtLocation(body, () -> replayEffect(viewer, watch, body));
+                });
+    }
+
+    /** Whether the blow was the only hit the victim took in the whole clip, and the killer's. */
+    private static boolean oneHit(Replay replay, Death death) {
+        int hits = 0;
+        boolean killers = false;
+        for (ReplayMark mark : replay.marks()) {
+            ReplayHit hit = replay.hit(mark);
+            if (hit == null || !hit.confirmed() || !hit.target().equals(death.victim())) continue;
+            hits++;
+            killers = hit.attacker().equals(death.killer());
+        }
+        return hits == 1 && killers;
     }
 
     /**
@@ -359,40 +444,10 @@ public final class KillCams {
         return text.endsWith(".0") ? text.substring(0, text.length() - 2) : text;
     }
 
-    /** Every tick while it plays: the slow motion, the cut, and the end. */
-    private void step(Player viewer, Watch watch) {
+    /** Every tick while it plays: the director moves the camera on, and says when it is over. */
+    private void step(Watch watch) {
         ReplayViewer open = watch.viewer;
-        if (open == null) return;
-        ReplayPlayback playback = open.playback();
-        int tick = playback.tick();
-        Timeline timeline = watch.timeline;
-        KillCamSettings.Killcam settings = KillCamSettings.get().killcam();
-        if (!watch.slowed && tick >= timeline.slowFrom() && tick < timeline.death()) {
-            watch.slowed = true;
-            playback.speed(Math.clamp(settings.slowMotionSpeed(), 0.0625, 1.0));
-        }
-        if (watch.leaveAt == 0 && tick >= timeline.death()) {
-            watch.leaveAt = System.currentTimeMillis() + Math.max(1, settings.holdSeconds()) * 1000L;
-            cut(viewer, watch);
-        }
-        if (watch.leaveAt != 0 && System.currentTimeMillis() >= watch.leaveAt) open.leave();
-    }
-
-    /**
-     * The death: back to real time, out of the killer's eyes, and onto the body
-     * from the killer's side, where the kill effect plays again.
-     */
-    private void cut(Player viewer, Watch watch) {
-        ReplayViewer open = watch.viewer;
-        ReplayPlayback playback = open.playback();
-        playback.speed(1.0);
-        open.unfollow();
-        Location body = playback.locationOf(watch.death.victim());
-        if (body == null) return;
-        Location shot = shot(body, playback.locationOf(watch.death.killer()));
-        core.getTeleports().to(viewer, shot).warmup(0).start().future().thenAccept(arrived -> {
-            if (arrived.isSuccess()) core.getTasks().runAtLocation(body, () -> replayEffect(viewer, watch, body));
-        });
+        if (open != null && watch.director != null && watch.director.step()) open.leave();
     }
 
     /** The killer's kill effect, once more, for the viewer alone. */
@@ -402,20 +457,6 @@ public final class KillCams {
         if (effect == null || Math.abs(effect.at - watch.death.at()) > EFFECT_MILLIS) return;
         KillEffectService service = Bukkit.getServicesManager().load(KillEffectService.class);
         if (service != null) service.show(effect.id, body, viewer);
-    }
-
-    /**
-     * Where the camera stands once it cuts: a few blocks off the body towards
-     * the killer, a little above it, looking down at it.
-     */
-    static @NotNull Location shot(@NotNull Location body, @Nullable Location killer) {
-        Vector away = killer == null || killer.getWorld() != body.getWorld()
-                ? body.getDirection().setY(0).multiply(-1)
-                : killer.toVector().subtract(body.toVector()).setY(0);
-        if (away.lengthSquared() < 1.0E-4) away = new Vector(0, 0, 1);
-        Location seat = body.clone().add(away.normalize().multiply(SHOT_DISTANCE)).add(0, 1.6, 0);
-        seat.setDirection(body.clone().add(0, 0.6, 0).toVector().subtract(seat.toVector()));
-        return seat;
     }
 
     /** {@code /killcam skip}, the hotbar button, and somebody taking the player over. */
@@ -516,9 +557,8 @@ public final class KillCams {
         private final Death death;
         private volatile ReplayViewer viewer;
         private Timeline timeline;
+        private Director director;
         private TaskHandle task;
-        private boolean slowed;
-        private long leaveAt;
 
         private Watch(Death death) {
             this.death = death;
