@@ -5,6 +5,13 @@ import net.exylia.exyliaKillCam.Permissions;
 import net.exylia.exyliaKillCam.config.KillCamMessages;
 import net.exylia.exyliaKillCam.config.KillCamSettings;
 import net.exylia.lib.api.killeffect.KillEffectService;
+import net.exylia.lib.ragdoll.RagdollAnimation;
+import net.exylia.lib.ragdoll.RagdollFinish;
+import net.exylia.lib.ragdoll.RagdollHandle;
+import net.exylia.lib.ragdoll.RagdollModel;
+import net.exylia.lib.ragdoll.RagdollMotion;
+import net.exylia.lib.ragdoll.RagdollPose;
+import net.exylia.lib.ragdoll.Ragdolls;
 import net.exylia.lib.replay.BlackBoxSettings;
 import net.exylia.lib.replay.Replay;
 import net.exylia.lib.replay.ReplayActor;
@@ -28,12 +35,14 @@ import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.util.Vector;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -78,6 +87,15 @@ public final class KillCams {
 
     /** A kill effect belongs to the death it played on when it is this close to it. */
     private static final long EFFECT_MILLIS = 15_000L;
+    /** The body of the last shot without a kill effect's own: struck back, to the knees, face down. */
+    private static final RagdollAnimation COLLAPSE = RagdollAnimation.parse(
+            "0.22 flip=-18 spine=-16 head=-25 arms=0,0,35 elbows=40,90 knees=15 forward=-0.25 ease=expo_out"
+                    + " | 0.32 kneel arms=10,0,25 elbows=25 spine=20 head=25 ease=bounce"
+                    + " | 0.4 prone arms=0,0,150 elbows=20,90 knees=10 ease=in"
+                    + " | 0.18 up=-0.46 knees=25 ease=out"
+                    + " | 0.18 up=-0.56 knees=8 ease=in"
+                    + " | 0.25 elbows=12,90 knees=5 ease=sine_out",
+            problem -> Bukkit.getLogger().warning("[ExyliaKillCam] The fall: " + problem));
 
     private static final String SETTING = "mode";
 
@@ -186,9 +204,14 @@ public final class KillCams {
         unseen.add(victim.getUniqueId());
 
         if (settings.killcam().autoRespawn() && mode(victim) == KillCamSettings.Mode.AUTO) {
-            core.getTasks().runAtEntityLater(victim, 2L, () -> {
+            // Back once the clip is cut, so the killcam opens at once instead of
+            // showing the respawn point while the last seconds are still recorded;
+            // the death screen holds until then, and never longer than a moment more.
+            Runnable respawn = () -> {
                 if (victim.isDead()) victim.spigot().respawn();
-            });
+            };
+            death.recording().whenComplete((bytes, failure) -> core.getTasks().runAtEntity(victim, respawn));
+            core.getTasks().runAtEntityLater(victim, (AFTER_SECONDS + 2) * 20L, respawn);
         }
     }
 
@@ -404,9 +427,19 @@ public final class KillCams {
                 blocks -> core.getMessages().text(lines.caption(), Values.of().put("distance", String.valueOf(blocks))).build(),
                 () -> core.getTasks().runAtEntityLater(viewer, 3L, () -> Director.sound(viewer, style.titleSound())),
                 () -> {
-                    Location body = open.playback().locationOf(death.victim());
-                    if (body != null) core.getTasks().runAtLocation(body, () -> replayEffect(viewer, watch, body));
-                });
+                    ReplayPlayback playback = open.playback();
+                    Location body = playback.locationOf(death.victim());
+                    if (body == null) return;
+                    // Fallen towards whoever killed them, on level ground.
+                    Location killer = playback.locationOf(death.killer());
+                    if (killer != null && killer.getWorld() == body.getWorld()) {
+                        Vector toward = killer.toVector().subtract(body.toVector()).setY(0);
+                        if (toward.lengthSquared() > 1.0E-4) body.setDirection(toward);
+                    }
+                    body.setPitch(0);
+                    core.getTasks().runAtLocation(body, () -> fall(viewer, watch, playback, body));
+                },
+                (at, task) -> core.getTasks().runAtLocation(at, task));
     }
 
     /** Whether the blow was the only hit the victim took in the whole clip, and the killer's. */
@@ -450,13 +483,39 @@ public final class KillCams {
         if (open != null && watch.director != null && watch.director.step()) open.leave();
     }
 
-    /** The killer's kill effect, once more, for the viewer alone. */
-    private void replayEffect(Player viewer, Watch watch, Location body) {
-        if (!KillCamSettings.get().killEffects().replay() || watch.viewer == null || !viewer.isOnline()) return;
+    /**
+     * The body, for the last shot: the killer's kill effect once more, for the
+     * viewer alone, and the recorded body swapped for one that falls and stays
+     * down, so the shot around it is not filmed around empty ground. An effect
+     * with a body of its own draws the only one.
+     */
+    private void fall(Player viewer, Watch watch, ReplayPlayback playback, Location body) {
+        if (watch.viewer == null || !viewer.isOnline() || watching.get(viewer.getUniqueId()) != watch) return;
+        if (replayEffect(viewer, watch, body)) {
+            playback.hide(watch.death.victim(), true);
+            return;
+        }
+        int hold = Math.max(1, KillCamSettings.get().killcam().holdSeconds());
+        RagdollMotion motion = RagdollMotion.builder()
+                .pose(RagdollPose.ANIMATE)
+                .animation(COLLAPSE)
+                .finish(RagdollFinish.HOLD)
+                .life(hold + 2)
+                .intactFor(0.1)
+                .build();
+        watch.body = Ragdolls.of(core.getPlugin())
+                .show(RagdollModel.of(viewer).detail(3).light(15), motion, body, List.of(viewer));
+        // Taken away after the new one is drawn: a frame of both beats a frame of none.
+        playback.hide(watch.death.victim(), true);
+    }
+
+    /** The killer's kill effect, once more, for the viewer alone: whether it drew a body of its own. */
+    private boolean replayEffect(Player viewer, Watch watch, Location body) {
+        if (!KillCamSettings.get().killEffects().replay()) return false;
         Effect effect = effects.get(watch.death.victim());
-        if (effect == null || Math.abs(effect.at - watch.death.at()) > EFFECT_MILLIS) return;
+        if (effect == null || Math.abs(effect.at - watch.death.at()) > EFFECT_MILLIS) return false;
         KillEffectService service = Bukkit.getServicesManager().load(KillEffectService.class);
-        if (service != null) service.show(effect.id, body, viewer);
+        return service != null && service.show(effect.id, body, viewer) && service.drawsBody(effect.id);
     }
 
     /** {@code /killcam skip}, the hotbar button, and somebody taking the player over. */
@@ -476,6 +535,8 @@ public final class KillCams {
     /** Put back where they were: the controls go, and the line about who killed them comes. */
     private void ended(Player viewer, Watch watch) {
         if (watch.task != null) watch.task.cancel();
+        RagdollHandle body = watch.body;
+        if (body != null) body.remove();
         if (!watching.remove(viewer.getUniqueId(), watch)) return;
         core.getHotbar().hide(viewer);
         sessions.release(viewer);
@@ -559,6 +620,8 @@ public final class KillCams {
         private Timeline timeline;
         private Director director;
         private TaskHandle task;
+        /** The body the last shot films, drawn where the victim fell; set on that place's thread. */
+        private volatile RagdollHandle body;
 
         private Watch(Death death) {
             this.death = death;

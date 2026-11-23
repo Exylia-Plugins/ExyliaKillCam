@@ -2,6 +2,8 @@ package net.exylia.exyliaKillCam.killcam;
 
 import net.exylia.exyliaKillCam.config.KillCamSettings;
 import net.exylia.lib.camera.CameraScreen;
+import net.exylia.lib.camera.CameraWalls;
+import net.exylia.lib.replay.Replay;
 import net.exylia.lib.replay.ReplayPlayback;
 import net.exylia.lib.replay.ReplayViewer;
 import net.exylia.lib.text.Colors;
@@ -13,9 +15,11 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.BiConsumer;
 import java.util.function.IntFunction;
 
 /**
@@ -46,6 +50,17 @@ final class Director implements ReplayPlayback.Shot {
     private static final double PUSH_FROM = 4.2;
     private static final double PUSH_TO = 2.6;
     private static final double SIDE = Math.toRadians(65);
+    /** Where else around the two of them the close-up may stand when a wall or a tree hides one, best first. */
+    private static final double[] SWINGS = {SIDE, Math.toRadians(90), Math.toRadians(40), Math.toRadians(115)};
+    /** And how high above eye level, when no place at eye level frames them: a tight room is filmed from above its walls. */
+    private static final double[] LIFTS = {0, 1.6, 3.2, 4.8};
+    /** How far above where the blow was seen the last shot may fly when walls crowd its path, best first. */
+    private static final double[] RAISES = {0, 1.6, 3.2, 4.8};
+    /** The open air a body keeps either side of it in the frame, and how near the lens it may stand, in blocks. */
+    private static final double BESIDE = 0.9;
+    private static final double NEAREST = 2.0;
+    /** How near the line to a body another one stands to cover it, in blocks. */
+    private static final double COVERS = 0.7;
     private static final double EYE = 1.75;
     private static final double CHEST = 1.1;
     /** The chase: behind the projectile and a little above, looking a little ahead. */
@@ -58,6 +73,11 @@ final class Director implements ReplayPlayback.Shot {
     private static final double RISE_SECONDS = 4;
     private static final double SHARED = 8;
     private static final double CLEARANCE = 2.5;
+    /** How well the last shot's whole path must frame them to be taken at once, and every how many seconds it is checked. */
+    private static final double GOOD = 0.85;
+    private static final double SAMPLE = 0.5;
+    /** How fast a camera pulled in by a wall eases back out once it is past it, in blocks a tick. */
+    private static final double ROOM_BACK = 0.25;
 
     enum Part { OPENING, CLOSE, IMPACT, FINALE }
 
@@ -83,6 +103,8 @@ final class Director implements ReplayPlayback.Shot {
     private final KillCamSettings.Style style;
     private final KillCamSettings.Killcam settings;
     private final Timeline timeline;
+    /** The tick the projectile that lands the blow is first seen, or -1 when it is not followed or was not recorded. */
+    private final int shotAt;
     private final @Nullable CameraScreen screen;
     private final Component title;
     private final Component line;
@@ -91,6 +113,8 @@ final class Director implements ReplayPlayback.Shot {
     private final Runnable landed;
     /** Called as the last shot starts: the killer's kill effect again. */
     private final Runnable finale;
+    /** Runs a task on the thread that owns a place: where the walls are read. */
+    private final BiConsumer<Location, Runnable> atPlace;
 
     private volatile Part part = Part.OPENING;
     private volatile int closeFrom;
@@ -98,6 +122,8 @@ final class Director implements ReplayPlayback.Shot {
     private volatile long finaleAt;
     private double speed = 1;
     private boolean titleGone;
+    /** The blocks around the scene, read once the close-up starts; until then nothing is in the way. */
+    private volatile @Nullable CameraWalls walls;
 
     // The shot's own, read and written on the playback's thread.
     private Location body;
@@ -111,10 +137,25 @@ final class Director implements ReplayPlayback.Shot {
     private double radius;
     private double height;
     private Location middle;
+    /** What the last shot keeps in sight: the ground the body lies on, and the killer standing by. */
+    private List<Location> finaleSeen = List.of();
+    /** Whether the last shot starts from where the blow was seen, or that place was too crowded. */
+    private boolean fromBlow = true;
+    /** Which way the orbit turns, and how far above where the blow was seen it flies: away from the walls. */
+    private int turn = 1;
+    private double raise;
+    /** Which side of the two the close-up films from, and how far round, once the walls say where has room. */
+    private int side;
+    private double swing = SIDE;
+    private double lift;
+    /** How far from what it films a camera may stand now, and for which part. */
+    private double room = Double.MAX_VALUE;
+    private @Nullable Location wantedLast;
 
     Director(@NotNull Player viewer, @NotNull ReplayViewer open, @NotNull Death death, @NotNull Timeline timeline,
              @NotNull KillCamSettings.Killcam settings, @NotNull Component title, @NotNull Component line,
-             @NotNull IntFunction<Component> caption, @NotNull Runnable landed, @NotNull Runnable finale) {
+             @NotNull IntFunction<Component> caption, @NotNull Runnable landed, @NotNull Runnable finale,
+             @NotNull BiConsumer<Location, Runnable> atPlace) {
         this.viewer = viewer;
         this.open = open;
         this.playback = open.playback();
@@ -122,12 +163,15 @@ final class Director implements ReplayPlayback.Shot {
         this.style = death.style();
         this.settings = settings;
         this.timeline = timeline;
+        this.shotAt = shotAt(playback.replay(), death.projectile() != null && style.projectileCam()
+                ? death.projectile() : null, timeline);
         this.screen = playback.screen(viewer);
         this.title = title;
         this.line = line;
         this.caption = caption;
         this.landed = landed;
         this.finale = finale;
+        this.atPlace = atPlace;
     }
 
     // ------------------------------------------------------------ the parts
@@ -136,7 +180,9 @@ final class Director implements ReplayPlayback.Shot {
     boolean step() {
         int tick = playback.tick();
         long now = System.currentTimeMillis();
-        if (part == Part.OPENING && (tick >= timeline.slowFrom() || tick >= timeline.death() || flying())) close(tick);
+        if (part == Part.OPENING && (tick >= timeline.death() || flying() || tick >= timeline.slowFrom() && !aiming(tick))) {
+            close(tick);
+        }
         if (part == Part.CLOSE) {
             if (tick >= timeline.death()) impact(now);
             else slow(tick);
@@ -156,11 +202,35 @@ final class Director implements ReplayPlayback.Shot {
         return projectile != null && style.projectileCam() && playback.drawnAt(projectile) != null;
     }
 
+    /**
+     * A projectile kill stays in the killer's eyes until the shot leaves:
+     * reaching the body first would cut back to the bow when it does.
+     */
+    private boolean aiming(int tick) {
+        return tick < shotAt;
+    }
+
+    static int shotAt(@NotNull Replay replay, @Nullable UUID projectile, @NotNull Timeline timeline) {
+        if (projectile == null) return -1;
+        for (int tick = timeline.start(); tick <= timeline.death(); tick++) {
+            if (replay.at(tick, projectile).present()) return tick;
+        }
+        return -1;
+    }
+
     /** Out of the killer's eyes and onto the two of them, with the bars and the tint. */
     private void close(int tick) {
         closeFrom = tick;
         // The server's view again: the close-up shows where everybody really was.
         open.follow(null, ReplayPlayback.View.SERVER);
+        // Read where the two of them are now, on that place's own thread; the
+        // camera asks the copy every frame from the playback's.
+        Location body = playback.locationOf(death.victim());
+        Location killer = playback.locationOf(death.killer());
+        if (body != null) {
+            Location other = killer != null ? killer : body;
+            atPlace.accept(body, () -> walls = CameraWalls.around(other, body));
+        }
         playback.direct(viewer, this);
         if (screen != null) {
             screen.letterbox(style.letterbox());
@@ -172,10 +242,10 @@ final class Director implements ReplayPlayback.Shot {
         part = Part.CLOSE;
     }
 
-    /** Slower and slower into the blow. */
+    /** Slower and slower into the blow; a followed shot flies at the slowest from the bow, or it is gone in a blink. */
     private void slow(int tick) {
         double slowest = settings.slowMotionSeconds() > 0 ? Math.clamp(settings.slowMotionSpeed(), 0.0625, 1.0) : 1;
-        double wanted = 1 + (slowest - 1) * eased(progress(tick));
+        double wanted = shotAt >= 0 ? slowest : 1 + (slowest - 1) * eased(progress(tick));
         if (Math.abs(wanted - speed) < 0.02) return;
         speed = wanted;
         playback.speed(wanted);
@@ -251,9 +321,77 @@ final class Director implements ReplayPlayback.Shot {
         toward.normalize();
         Vector across = new Vector(-toward.getZ(), 0, toward.getX());
         double reach = PUSH_FROM + (PUSH_TO - PUSH_FROM) * near;
-        Vector off = toward.clone().multiply(Math.cos(SIDE)).add(across.multiply(Math.sin(SIDE))).multiply(reach);
-        Location seat = body.clone().add(off).add(0, EYE, 0);
-        return looking(seat, body.clone().add(toward.multiply(Math.min(1, apart / 3))).add(0, CHEST, 0));
+        Location at = body.clone().add(toward.clone().multiply(Math.min(1, apart / 3))).add(0, CHEST, 0);
+        List<Location> seen = new ArrayList<>(2);
+        seen.add(body.clone().add(0, CHEST, 0));
+        if (killer != null && killer.getWorld() == body.getWorld()) seen.add(killer.clone().add(0, CHEST, 0));
+        CameraWalls walls = this.walls;
+        if (side == 0 && walls != null) {
+            // Chosen once, under the cut through black: the first place that frames both of
+            // them cleanly from as far as it wants, or else the one that comes nearest.
+            double best = -1;
+            for (double up : LIFTS) {
+                for (double around : SWINGS) {
+                    for (int either : new int[]{1, -1}) {
+                        // Judged where it starts and where it ends up, pushed in on the blow.
+                        double score = Math.min(
+                                framing(walls, at, seat(toward, across, either, around, PUSH_FROM).add(0, up, 0), seen),
+                                framing(walls, at, seat(toward, across, either, around, PUSH_TO).add(0, up, 0), seen));
+                        if (score > best + 0.05) {
+                            best = score;
+                            side = either;
+                            swing = around;
+                            lift = up;
+                        }
+                    }
+                }
+            }
+        }
+        return looking(seat(toward, across, side == 0 ? 1 : side, swing, reach).add(0, lift, 0), at, seen);
+    }
+
+    /**
+     * How well a seat frames the two of them, from 0 to 1: how much of its
+     * distance it keeps in front of the walls, halved for each of them a wall or
+     * a tree hides or crowds in the frame, and less again for one standing right
+     * in front of the lens or in front of the other.
+     */
+    private static double framing(CameraWalls walls, Location at, Location wanted, List<Location> seen) {
+        Location seat = walls.clear(at, wanted, seen);
+        double score = seat.distance(at) / Math.max(1.0E-3, wanted.distance(at));
+        Vector look = at.toVector().subtract(seat.toVector()).setY(0);
+        Vector beside = look.lengthSquared() < 1.0E-6 ? new Vector()
+                : new Vector(-look.getZ(), 0, look.getX()).normalize().multiply(BESIDE);
+        for (Location point : seen) {
+            // From the seat out: a trunk right beside a body is entered on the way, even with the point inside it.
+            if (!walls.sees(seat, point) || !walls.sees(seat, point.clone().add(beside))
+                    || !walls.sees(seat, point.clone().subtract(beside))) score *= 0.5;
+            if (point.distance(seat) < NEAREST) score *= 0.3;
+            for (Location other : seen) {
+                if (other != point && inFront(seat, point, other)) score *= 0.4;
+            }
+        }
+        return score;
+    }
+
+    /** Whether {@code front} stands on the way from the seat to {@code behind}, near enough to cover it. */
+    private static boolean inFront(Location seat, Location front, Location behind) {
+        double dx = behind.getX() - seat.getX();
+        double dz = behind.getZ() - seat.getZ();
+        double length = dx * dx + dz * dz;
+        if (length < 1.0E-6) return false;
+        double t = ((front.getX() - seat.getX()) * dx + (front.getZ() - seat.getZ()) * dz) / length;
+        if (t <= 0 || t >= 1) return false;
+        return Math.hypot(seat.getX() + dx * t - front.getX(), seat.getZ() + dz * t - front.getZ()) < COVERS;
+    }
+
+    private Location seat(Vector toward, Vector across, int side, double swing, double reach) {
+        Vector off = toward.clone().multiply(Math.cos(swing)).add(across.clone().multiply(side * Math.sin(swing)));
+        return body.clone().add(off.multiply(reach)).add(0, EYE, 0);
+    }
+
+    private static double roomAt(CameraWalls walls, Location at, Location seat, List<Location> seen) {
+        return walls.clear(at, seat, seen).distance(at);
     }
 
     /** Behind the projectile in flight, with how far it has come over the view. */
@@ -281,8 +419,10 @@ final class Director implements ReplayPlayback.Shot {
             captioned = blocks;
             screen.caption(caption.apply(blocks));
         }
-        Location seat = at.clone().subtract(heading.clone().multiply(CHASE_BEHIND)).add(0, CHASE_ABOVE, 0);
-        return looking(seat, at.clone().add(heading.clone().multiply(CHASE_AHEAD)));
+        // Never behind the bow: just out of the bow the head would fill the frame.
+        double behind = Math.min(CHASE_BEHIND, Math.max(0, launch.distance(here) - 0.4));
+        Location seat = at.clone().subtract(heading.clone().multiply(behind)).add(0, CHASE_ABOVE, 0);
+        return looking(seat, at.clone().add(heading.clone().multiply(CHASE_AHEAD)), List.of());
     }
 
     /** Where the blow was seen from, shaking less and less. */
@@ -307,31 +447,90 @@ final class Director implements ReplayPlayback.Shot {
             middle = body.clone();
             double reach = 0;
             Location killer = playback.drawnAt(death.killer());
+            List<Location> seen = new ArrayList<>(2);
+            // The body lies by now: keep the ground it lies on in sight, not where its chest stood.
+            seen.add(body.clone().add(0, 0.4, 0));
             if (killer != null && killer.getWorld() == body.getWorld()) {
                 double apart = Math.hypot(killer.getX() - body.getX(), killer.getZ() - body.getZ());
                 if (apart <= SHARED) {
                     middle.add(killer.toVector().subtract(body.toVector()).setY(0).multiply(0.5));
                     reach = apart / 2;
+                    seen.add(killer.clone().add(0, CHEST, 0));
                 }
             }
+            finaleSeen = List.copyOf(seen);
             angle = Math.atan2(from.getZ() - middle.getZ(), from.getX() - middle.getX());
             radius = Math.max(reach + CLEARANCE, Math.hypot(from.getX() - middle.getX(), from.getZ() - middle.getZ()));
             height = from.getY() - middle.getY();
+            turnToRoom();
         }
         double seconds = (System.currentTimeMillis() - finaleAt) / 1000.0;
         Location centre = middle.clone().add(0, CHEST * 0.7, 0);
-        return switch (style.finale()) {
-            case HOLD -> looking(from.clone(), centre);
-            case ORBIT -> {
-                double turned = angle + seconds * ORBIT_SPEED;
-                yield looking(middle.clone().add(Math.cos(turned) * radius, height, Math.sin(turned) * radius), centre);
-            }
+        List<Location> seen = finaleSeen;
+        boolean still = style.finale() == KillCamSettings.Finale.HOLD && fromBlow;
+        return looking(still ? from.clone() : finaleSeat(angle, turn, raise, seconds), centre, seen);
+    }
+
+    /** Where the last shot stands a number of seconds in, starting at an angle around them, turning one way, raised. */
+    private Location finaleSeat(double start, int way, double up, double seconds) {
+        double turned = start;
+        double out = radius;
+        double above = height + up;
+        switch (style.finale()) {
+            case ORBIT -> turned += way * seconds * ORBIT_SPEED;
             case RISE -> {
                 double risen = Math.min(seconds, RISE_SECONDS) * RISE_SPEED;
-                double out = radius + risen * 0.6;
-                yield looking(middle.clone().add(Math.cos(angle) * out, height + risen, Math.sin(angle) * out), centre);
+                out += risen * 0.6;
+                above += risen;
             }
+            case HOLD -> { }
+        }
+        return middle.clone().add(Math.cos(turned) * out, above, Math.sin(turned) * out);
+    }
+
+    /**
+     * The last shot starts where the blow was seen unless a wall or a tree
+     * crowds the two of them somewhere on its path: then the orbit turns the
+     * other way, or starts from the nearest angle around them that frames them
+     * cleanly all along, or flies higher, over the walls of a tight room. The
+     * impact frame's black hides the cut.
+     */
+    private void turnToRoom() {
+        CameraWalls walls = this.walls;
+        if (walls == null) return;
+        Location centre = middle.clone().add(0, CHEST * 0.7, 0);
+        KillCamSettings.Finale kind = style.finale();
+        double span = switch (kind) {
+            case HOLD -> 0;
+            case RISE -> Math.min(RISE_SECONDS, Math.max(1, settings.holdSeconds()));
+            case ORBIT -> Math.max(1, settings.holdSeconds());
         };
+        int[] ways = kind == KillCamSettings.Finale.ORBIT ? new int[]{1, -1} : new int[]{1};
+        double from = angle;
+        double best = -1;
+        for (double up : RAISES) {
+            for (int step = 0; step <= 6; step++) {
+                for (int sign : step == 0 ? new int[]{1} : new int[]{1, -1}) {
+                    double turned = from + sign * step * Math.toRadians(30);
+                    for (int way : ways) {
+                        // The worst moment of the path is what it is worth; one already worse than the best stops.
+                        double score = 1;
+                        for (double at = 0; at <= span + 1.0E-9 && score > best; at += SAMPLE) {
+                            score = Math.min(score, framing(walls, centre, finaleSeat(turned, way, up, at), finaleSeen));
+                        }
+                        if (score > best + 0.05 || score >= GOOD) {
+                            best = score;
+                            angle = turned;
+                            turn = way;
+                            raise = up;
+                            fromBlow = step == 0 && up == 0;
+                        }
+                        // Good enough near where the blow was seen beats a little better far round or high up.
+                        if (score >= GOOD) return;
+                    }
+                }
+            }
+        }
     }
 
     // --------------------------------------------------------------- helpers
@@ -345,7 +544,26 @@ final class Director implements ReplayPlayback.Shot {
         return t * t * (3 - 2 * t);
     }
 
-    private static Location looking(Location seat, Location at) {
+    /**
+     * A seat facing what it films, pulled in front of any wall between them,
+     * and nearer still while one hides any of {@code seen}.
+     * It snaps in at once, the frame a wall comes between, and eases back out
+     * after, so an orbit passing a tree does not jump in and out with every log.
+     */
+    private Location looking(Location seat, Location at, List<Location> seen) {
+        CameraWalls walls = this.walls;
+        if (walls != null) {
+            double wanted = seat.distance(at);
+            double free = roomAt(walls, at, seat, seen);
+            // A cut (another shot, or the chase handing over to the close-up) starts where it has room.
+            boolean cut = wantedLast == null || wantedLast.getWorld() != seat.getWorld()
+                    || wantedLast.distanceSquared(seat) > 4;
+            wantedLast = seat.clone();
+            room = cut ? free : Math.min(free, room + ROOM_BACK);
+            if (room < wanted - 1.0E-3) {
+                seat = at.clone().add(seat.toVector().subtract(at.toVector()).multiply(room / wanted));
+            }
+        }
         Vector toward = at.toVector().subtract(seat.toVector());
         if (toward.lengthSquared() > 1.0E-6) seat.setDirection(toward);
         return seat;
